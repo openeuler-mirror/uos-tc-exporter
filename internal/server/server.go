@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
+	_ "gitee.com/openeuler/uos-tc-exporter/internal/metrics"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/ratelimit"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/utils"
