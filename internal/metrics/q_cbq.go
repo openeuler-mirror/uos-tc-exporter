@@ -112,16 +112,16 @@ type qdiscCbqBorrows struct {
 	*baseMetrics
 }
 
-func newQdiscCbqBorrows() *qdiscCbqBorrows {
-	logrus.Debug("create qdiscCbqBorrows")
-	return &qdiscCbqBorrows{
-		NewMetrics(
-			"qdisc_cbq_borrows",
-			"CBQ borrows xstat",
-			[]string{"namespace",
-				"device",
-				"kind"})}
-}
+// func newQdiscCbqBorrows() *qdiscCbqBorrows {
+// 	logrus.Debug("create qdiscCbqBorrows")
+// 	return &qdiscCbqBorrows{
+// 		NewMetrics(
+// 			"qdisc_cbq_borrows",
+// 			"CBQ borrows xstat",
+// 			[]string{"namespace",
+// 				"device",
+// 				"kind"})}
+// }
 
 func (qd *qdiscCbqBorrows) Collect(ch chan<- prometheus.Metric,
 	value float64,
@@ -135,16 +135,16 @@ type qdiscCbqOveractions struct {
 	*baseMetrics
 }
 
-func newQdiscCbqOveractions() *qdiscCbqOveractions {
-	logrus.Debug("create qdiscCbqOveractions")
-	return &qdiscCbqOveractions{
-		NewMetrics(
-			"qdisc_cbq_overactions",
-			"CBQ overactions xstat",
-			[]string{"namespace",
-				"device",
-				"kind"})}
-}
+// func newQdiscCbqOveractions() *qdiscCbqOveractions {
+// 	logrus.Debug("create qdiscCbqOveractions")
+// 	return &qdiscCbqOveractions{
+// 		NewMetrics(
+// 			"qdisc_cbq_overactions",
+// 			"CBQ overactions xstat",
+// 			[]string{"namespace",
+// 				"device",
+// 				"kind"})}
+// }
 
 func (qd *qdiscCbqOveractions) Collect(ch chan<- prometheus.Metric,
 	value float64,
@@ -158,16 +158,16 @@ type qdiscCbqUnderTime struct {
 	*baseMetrics
 }
 
-func newQdiscCbqUndeTime() *qdiscCbqUnderTime {
-	logrus.Debug("create qdiscCbqUnderTime")
-	return &qdiscCbqUnderTime{
-		NewMetrics(
-			"qdisc_cbq_undertime",
-			"CBQ undetime xstat",
-			[]string{"namespace",
-				"device",
-				"kind"})}
-}
+// func newQdiscCbqUndeTime() *qdiscCbqUnderTime {
+// 	logrus.Debug("create qdiscCbqUnderTime")
+// 	return &qdiscCbqUnderTime{
+// 		NewMetrics(
+// 			"qdisc_cbq_undertime",
+// 			"CBQ undetime xstat",
+// 			[]string{"namespace",
+// 				"device",
+// 				"kind"})}
+// }
 
 func (qd *qdiscCbqUnderTime) Collect(ch chan<- prometheus.Metric,
 	value float64,
