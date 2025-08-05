@@ -275,29 +275,6 @@ func (qd *qdiscCodelLdelay) Collect(ch chan<- prometheus.Metric,
 		labels)
 }
 
-type qdiscCodelLastCount struct {
-	*baseMetrics
-}
-
-func newQdiscCodelLastCount() *qdiscCodelLastCount {
-	logrus.Debug("create qdiscCodelLastCount")
-	return &qdiscCodelLastCount{
-		NewMetrics(
-			"qdisc_codel_last_count",
-			"Codel last count xstat",
-			[]string{"namespace",
-				"device",
-				"kind"})}
-}
-
-func (qd *qdiscCodelLastCount) Collect(ch chan<- prometheus.Metric,
-	value float64,
-	labels []string) {
-	qd.collect(ch,
-		value,
-		labels)
-}
-
 type qdiscCodelMaxPacket struct {
 	*baseMetrics
 }
