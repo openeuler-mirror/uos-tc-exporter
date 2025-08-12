@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 UnionTech Software Technology Co., Ltd.
+// SPDX-License-Identifier: MIT
+
 // Package tc 提供了 Linux Traffic Control (TC) 的操作接口
 package tc
 

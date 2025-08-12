@@ -1,11 +1,15 @@
+// SPDX-FileCopyrightText: 2025 UnionTech Software Technology Co., Ltd.
+// SPDX-License-Identifier: MIT
+
 package utils
 
 import (
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/sirupsen/logrus"
 )
 
 func HandleSignals(function func()) {

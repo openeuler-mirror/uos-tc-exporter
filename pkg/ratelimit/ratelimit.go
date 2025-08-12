@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 UnionTech Software Technology Co., Ltd.
+// SPDX-License-Identifier: MIT
+
 // Package ratelimit 提供了基于令牌桶算法的限流器实现
 //
 // 限流器通过控制令牌的发放速率来限制操作的频率，适用于API限流、

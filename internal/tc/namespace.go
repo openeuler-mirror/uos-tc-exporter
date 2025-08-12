@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 UnionTech Software Technology Co., Ltd.
+// SPDX-License-Identifier: MIT
+
 // Package tc 提供了 Linux Traffic Control (TC) 的操作接口
 //
 // 该包封装了 TC 相关的网络操作，包括网络命名空间管理、

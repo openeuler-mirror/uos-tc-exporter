@@ -1,10 +1,14 @@
+// SPDX-FileCopyrightText: 2025 UnionTech Software Technology Co., Ltd.
+// SPDX-License-Identifier: MIT
+
 package logger
 
 import (
-	formatter "gitee.com/weidongkl/logrus-formatter"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
+
+	formatter "gitee.com/weidongkl/logrus-formatter"
+	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
