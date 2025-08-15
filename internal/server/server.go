@@ -126,6 +126,7 @@ func (s *Server) setupHttpServer() error {
 		rateLimiter, err := ratelimit.NewRateLimiter(*rateLimitInterval, *rateLimitSize)
 		if err != nil {
 			logrus.Errorf("ratelimit middleware init error: %v", err)
+			return err
 		}
 		s.Use(Ratelimit(rateLimiter))
 	}
@@ -184,9 +185,9 @@ func (s *Server) createRequest(w http.ResponseWriter, r *http.Request) *Request 
 
 func (s *Server) Run() error {
 	go utils.HandleSignals(s.Exit)
-	logrus.Infof("%s sucessfully setup. SetUp running.", s.Name)
+	logrus.Infof("%s successfully setup. SetUp running.", s.Name)
 
-	logrus.Infof("Runing  %s", s.Name)
+	logrus.Infof("Running %s", s.Name)
 	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		logrus.Errorf("ListenAndServe Error: %s\n", err)
 		return err
