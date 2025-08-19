@@ -247,6 +247,11 @@ func (c *Config) IsPublic() bool {
 		return false
 	}
 
+	// 检查是否为私有IP地址
+	if ip.IsPrivate() || ip.IsLoopback() || ip.IsUnspecified() {
+		return false
+	}
+
 	return true
 }
 
