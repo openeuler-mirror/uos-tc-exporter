@@ -13,6 +13,7 @@ import (
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
 	_ "gitee.com/openeuler/uos-tc-exporter/internal/metrics"
+	"gitee.com/openeuler/uos-tc-exporter/pkg/errors"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/ratelimit"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/utils"
@@ -125,8 +126,15 @@ func (s *Server) setupHttpServer() error {
 	if *UseRatelimit {
 		rateLimiter, err := ratelimit.NewRateLimiter(*rateLimitInterval, *rateLimitSize)
 		if err != nil {
-			logrus.Errorf("ratelimit middleware init error: %v", err)
-			return err
+			customErr := errors.Wrap(err, errors.ErrCodeRateLimit, "failed to initialize rate limiter middleware")
+			customErr.WithContext("interval", *rateLimitInterval).WithContext("size", *rateLimitSize)
+			logrus.WithFields(logrus.Fields{
+				"error_code": customErr.Code,
+				"error":      customErr.Error(),
+				"interval":   *rateLimitInterval,
+				"size":       *rateLimitSize,
+			}).Error("Rate limiter middleware initialization failed")
+			return customErr
 		}
 		s.Use(Ratelimit(rateLimiter))
 	}
@@ -149,8 +157,14 @@ func (s *Server) setupHttpServer() error {
 	}
 	landPage, err := NewLandingPage(landConfig)
 	if err != nil {
-		logrus.Errorf("Failed to create landing page: %v", err)
-		return err
+		customErr := errors.Wrap(err, errors.ErrCodeLandingPage, "failed to create landing page")
+		customErr.WithContext("config", landConfig)
+		logrus.WithFields(logrus.Fields{
+			"error_code": customErr.Code,
+			"error":      customErr.Error(),
+			"config":     landConfig,
+		}).Error("Landing page creation failed")
+		return customErr
 	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		landPage.ServeHTTP(w, r)
@@ -189,8 +203,14 @@ func (s *Server) Run() error {
 
 	logrus.Infof("Running %s", s.Name)
 	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logrus.Errorf("ListenAndServe Error: %s\n", err)
-		return err
+		customErr := errors.Wrap(err, errors.ErrCodeServerRun, "server listen and serve failed")
+		customErr.WithContext("address", s.server.Addr)
+		logrus.WithFields(logrus.Fields{
+			"error_code": customErr.Code,
+			"error":      customErr.Error(),
+			"address":    s.server.Addr,
+		}).Error("Server listen and serve failed")
+		return customErr
 	}
 	return nil
 }
@@ -209,7 +229,13 @@ func (s *Server) Stop() {
 		if ctx.Err() == context.DeadlineExceeded {
 			logrus.Warn("Server shutdown timed out")
 		} else {
-			logrus.Errorf("Server Shutdown Error: %s", err)
+			customErr := errors.Wrap(err, errors.ErrCodeServerShutdown, "server shutdown failed")
+			customErr.WithContext("timeout", "1s")
+			logrus.WithFields(logrus.Fields{
+				"error_code": customErr.Code,
+				"error":      customErr.Error(),
+				"timeout":    "1s",
+			}).Error("Server shutdown failed")
 		}
 	} else {
 		logrus.Info("Server gracefully stopped")
