@@ -15,7 +15,7 @@ import (
 	"gitee.com/openeuler/uos-tc-exporter/pkg/utils"
 	"github.com/alecthomas/kingpin"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
