@@ -42,6 +42,7 @@ type Server struct {
 	Name         string
 	Version      string
 	CommonConfig exporter.Config
+	configMgr    *exporter.ConfigManager
 	promReg      *prometheus.Registry
 	handlers     []HandlerFunc
 	ExitSignal   chan struct{}
@@ -54,10 +55,19 @@ func NewServer(name, version string) *Server {
 	if version == "" {
 		version = defaultSeverVersion
 	}
+
+	// 创建配置管理器
+	configMgr, err := exporter.NewConfigManager(*exporter.Configfile)
+	if err != nil {
+		logrus.Warnf("Failed to create config manager: %v, will use static config", err)
+		configMgr = nil
+	}
+
 	s := &Server{
 		Name:         name,
 		Version:      version,
 		CommonConfig: exporter.DefaultConfig,
+		configMgr:    configMgr,
 		promReg:      prometheus.NewRegistry(),
 		ExitSignal:   make(chan struct{}),
 	}
@@ -92,6 +102,15 @@ func (s *Server) SetUp() error {
 	if err != nil {
 		logrus.Errorf("SetUp error: %v", err)
 		return err
+	}
+
+	// 启动配置监控（如果配置管理器可用）
+	if s.configMgr != nil {
+		if err := s.startConfigWatching(); err != nil {
+			logrus.Warnf("Failed to start config watching: %v, config hot reload will be disabled", err)
+		} else {
+			logrus.Info("Config hot reload enabled")
+		}
 	}
 
 	return nil
@@ -222,6 +241,16 @@ func (s *Server) PrintVersion() {
 func (s *Server) Stop() {
 	logrus.Info("Stopping Server")
 	logger.LogOutput("Shutting down server...")
+
+	// 停止配置监控
+	if s.configMgr != nil {
+		if err := s.configMgr.StopWatching(); err != nil {
+			logrus.Warnf("Failed to stop config watching: %v", err)
+		} else {
+			logrus.Info("Config watching stopped")
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -254,6 +283,26 @@ func (s *Server) parse() error {
 }
 
 func (s *Server) loadConfig() error {
+	if s.configMgr != nil {
+		// 使用配置管理器加载配置
+		if err := s.configMgr.LoadConfig(); err != nil {
+			logrus.Errorf("Failed to load config via config manager: %v", err)
+			logrus.Info("Use default config")
+			return nil
+		}
+
+		// 获取配置并同步到服务器
+		s.CommonConfig = s.configMgr.GetConfig()
+
+		// 设置配置重载回调
+		s.configMgr.SetReloadCallback(s.onConfigReload)
+
+		logrus.Infof("Loaded config via config manager from: %s", *exporter.Configfile)
+		logrus.Info("CommonConfig file loaded and validated successfully")
+		return nil
+	}
+
+	// 回退到原有的静态配置加载方式
 	content, err := os.ReadFile(*exporter.Configfile)
 	if err != nil {
 		logrus.Errorf("Failed to read config file: %v", err)
@@ -281,5 +330,45 @@ func (s *Server) loadConfig() error {
 
 	logrus.Infof("Loaded config file from: %s", *exporter.Configfile)
 	logrus.Info("CommonConfig file loaded and validated successfully")
+	return nil
+}
+
+// onConfigReload 配置重载回调函数
+func (s *Server) onConfigReload(newConfig *exporter.Config) error {
+	logrus.Info("Configuration reload triggered")
+
+	// 同步新配置到服务器
+	s.CommonConfig = *newConfig
+
+	// 重新设置日志配置
+	if err := s.setupLog(); err != nil {
+		logrus.Errorf("Failed to update logging config: %v", err)
+		return err
+	}
+
+	// 重新设置HTTP服务器（如果需要）
+	if err := s.setupHttpServer(); err != nil {
+		logrus.Errorf("Failed to update HTTP server config: %v", err)
+		return err
+	}
+
+	logrus.Info("Configuration reload completed successfully")
+	return nil
+}
+
+// startConfigWatching 启动配置监控
+func (s *Server) startConfigWatching() error {
+	if s.configMgr == nil {
+		return fmt.Errorf("config manager not available")
+	}
+
+	// 创建上下文
+	ctx := context.Background()
+
+	// 启动配置监控
+	if err := s.configMgr.StartWatching(ctx); err != nil {
+		return fmt.Errorf("failed to start config watching: %w", err)
+	}
+
 	return nil
 }
