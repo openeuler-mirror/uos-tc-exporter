@@ -266,7 +266,20 @@ func (s *Server) loadConfig() error {
 		logrus.Info("Use default config")
 		return nil
 	}
+
+	// 验证配置的有效性
+	if err := s.CommonConfig.Validate(); err != nil {
+		customErr := errors.Wrap(err, errors.ErrCodeConfig, "configuration validation failed")
+		customErr.WithContext("config_file", *exporter.Configfile)
+		logrus.WithFields(logrus.Fields{
+			"error_code":  customErr.Code,
+			"error":       customErr.Error(),
+			"config_file": *exporter.Configfile,
+		}).Error("Configuration validation failed")
+		return customErr
+	}
+
 	logrus.Infof("Loaded config file from: %s", *exporter.Configfile)
-	logrus.Info("CommonConfig file loaded")
+	logrus.Info("CommonConfig file loaded and validated successfully")
 	return nil
 }
