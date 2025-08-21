@@ -45,6 +45,7 @@ type Server struct {
 	configMgr    *exporter.ConfigManager
 	promReg      *prometheus.Registry
 	handlers     []HandlerFunc
+	handlersMu   sync.RWMutex // 保护handlers切片的读写锁
 	ExitSignal   chan struct{}
 	Error        error
 	callback     sync.Once
@@ -197,6 +198,8 @@ func (s *Server) setupHttpServer() error {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req := s.createRequest(w, r)
+	s.handlersMu.RLock()
+	defer s.handlersMu.RUnlock()
 	for _, handler := range s.handlers {
 		handler(req)
 		if req.Error != nil {
@@ -207,11 +210,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) Use(handlerFuncs ...HandlerFunc) {
+	s.handlersMu.Lock()
+	defer s.handlersMu.Unlock()
 	s.handlers = append(s.handlers, handlerFuncs...)
 }
 
 func (s *Server) createRequest(w http.ResponseWriter, r *http.Request) *Request {
 	req := NewRequest(w, r)
+	s.handlersMu.RLock()
+	defer s.handlersMu.RUnlock()
 	req.handlers = s.handlers
 	return req
 }
