@@ -5,6 +5,7 @@ package server
 
 import (
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
+	_ "gitee.com/openeuler/uos-tc-exporter/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/sirupsen/logrus"
@@ -46,13 +47,13 @@ func (mm *MetricsManager) GetRegistry() *prometheus.Registry {
 // Reload 重新加载指标配置
 func (mm *MetricsManager) Reload() error {
 	logrus.Info("Reloading metrics configuration")
-	
+
 	// 清理现有注册表
 	mm.promReg = prometheus.NewRegistry()
-	
+
 	// 重新设置
 	mm.Setup()
-	
+
 	logrus.Info("Metrics configuration reloaded successfully")
 	return nil
 }

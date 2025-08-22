@@ -26,6 +26,7 @@ func Register(metric Metric) {
 }
 
 func RegisterPrometheus(reg *prometheus.Registry) {
+	logrus.Info("Registering default registry to prometheus registry")
 	reg.MustRegister(defaultReg)
 }
 

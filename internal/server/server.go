@@ -84,7 +84,7 @@ func (s *Server) SetUp() error {
 	s.metricsMgr.Setup()
 
 	// 初始化HTTP服务器
-	s.httpServer = NewHttpServer(s.configMgr.GetConfig(), s.configMgr.GetConfig().MetricsPath)
+	s.httpServer = NewHttpServer(s.configMgr.GetConfig(), s.configMgr.GetConfig().MetricsPath, s.metricsMgr.GetRegistry())
 	err = s.httpServer.Setup(s.metricsMgr)
 	if err != nil {
 		logrus.Errorf("SetUp error: %v", err)
