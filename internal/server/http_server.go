@@ -26,13 +26,15 @@ type HttpServer struct {
 	handlersMu  sync.RWMutex // 保护handlers切片的读写锁
 	config      exporter.Config
 	metricsPath string
+	promReg     *prometheus.Registry
 }
 
 // NewHttpServer 创建新的HTTP服务器
-func NewHttpServer(config exporter.Config, metricsPath string) *HttpServer {
+func NewHttpServer(config exporter.Config, metricsPath string, promReg *prometheus.Registry) *HttpServer {
 	return &HttpServer{
 		config:      config,
 		metricsPath: metricsPath,
+		promReg:     promReg,
 	}
 }
 
@@ -131,7 +133,7 @@ func (hs *HttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// 处理指标请求 - 这里需要从外部传入metricsManager
 	// 暂时使用默认的prometheus注册表
-	promhttp.HandlerFor(prometheus.NewRegistry(), promhttp.HandlerOpts{}).ServeHTTP(w, r)
+	promhttp.HandlerFor(hs.promReg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 }
 
 // Use 添加中间件处理器
