@@ -4,6 +4,7 @@
 package server
 
 import (
+	"context"
 	"os"
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
@@ -97,7 +98,7 @@ func (cm *ConfigManager) StartWatching() error {
 	}
 
 	// 启动配置监控
-	if err := cm.configMgr.StartWatching(nil); err != nil {
+	if err := cm.configMgr.StartWatching(context.TODO()); err != nil {
 		return err
 	}
 
