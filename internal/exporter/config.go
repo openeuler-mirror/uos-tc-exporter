@@ -18,11 +18,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ServerConfig 服务器相关配置
+type ServerConfig struct {
+	ShutdownTimeout time.Duration `yaml:"shutdownTimeout"` // 优雅关闭超时时间
+}
+
 type Config struct {
 	Logging     logger.Config `yaml:"log"`
 	Address     string        `yaml:"address"`
 	Port        int           `yaml:"port"`
 	MetricsPath string        `yaml:"metricsPath"`
+	Server      ServerConfig  `yaml:"server"`
 }
 
 var (
@@ -36,6 +42,9 @@ var (
 		Address:     "127.0.0.1",
 		Port:        9062,
 		MetricsPath: "/metrics",
+		Server: ServerConfig{
+			ShutdownTimeout: 30 * time.Second, // 默认30秒关闭超时
+		},
 	}
 )
 
@@ -86,6 +95,11 @@ func (c *Config) Validate() error {
 	// 验证日志配置
 	if err := c.validateLogging(); err != nil {
 		errors = append(errors, fmt.Sprintf("logging validation failed: %v", err))
+	}
+
+	// 验证服务器配置
+	if err := c.validateServer(); err != nil {
+		errors = append(errors, fmt.Sprintf("server validation failed: %v", err))
 	}
 
 	if len(errors) > 0 {
@@ -253,6 +267,24 @@ func (c *Config) IsPublic() bool {
 	}
 
 	return true
+}
+
+// validateServer 验证服务器配置
+func (c *Config) validateServer() error {
+	// 验证关闭超时时间
+	if c.Server.ShutdownTimeout < 0 {
+		logrus.Warnf("shutdown timeout cannot be negative, got: %v", c.Server.ShutdownTimeout)
+		logrus.Info("Using default shutdown timeout: 30s")
+		c.Server.ShutdownTimeout = 30 * time.Second
+	}
+
+	// 如果超时时间为0，使用默认值
+	if c.Server.ShutdownTimeout == 0 {
+		c.Server.ShutdownTimeout = 30 * time.Second
+		logrus.Info("Using default shutdown timeout: 30s")
+	}
+
+	return nil
 }
 
 // validateLogging 验证日志配置

@@ -180,19 +180,27 @@ func (hs *HttpServer) Stop() error {
 
 	logrus.Info("Stopping HTTP server")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	// 使用配置中的关闭超时时间
+	shutdownTimeout := hs.config.Server.ShutdownTimeout
+	if shutdownTimeout == 0 {
+		shutdownTimeout = 30 * time.Second // 默认30秒
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
+
+	logrus.Infof("HTTP server shutdown timeout set to: %v", shutdownTimeout)
 
 	if err := hs.server.Shutdown(ctx); err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
-			logrus.Warn("HTTP server shutdown timed out")
+			logrus.Warnf("HTTP server shutdown timed out after %v", shutdownTimeout)
 		} else {
 			customErr := errors.Wrap(err, errors.ErrCodeServerShutdown, "HTTP server shutdown failed")
-			customErr.WithContext("timeout", "1s")
+			customErr.WithContext("timeout", shutdownTimeout.String())
 			logrus.WithFields(logrus.Fields{
 				"error_code": customErr.Code,
 				"error":      customErr.Error(),
-				"timeout":    "1s",
+				"timeout":    shutdownTimeout.String(),
 			}).Error("HTTP server shutdown failed")
 		}
 		return err

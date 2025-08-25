@@ -42,6 +42,7 @@ TC Exporter 通过模块化的收集器架构支持多种队列规则，每种 q
 - [架构设计](docs/architecture.md) - 系统架构和核心组件说明
 - [支持的队列规则](docs/supported-qdiscs.md) - 各种 qdisc 的详细介绍和实现
 - [开发文档](docs/development.md) - 项目结构和开发指南
+- [优雅关闭功能](docs/graceful-shutdown.md) - 可配置的优雅关闭机制
 
 ## 安装
 
@@ -97,6 +98,11 @@ metricsPath: "/metrics"
 log:
   level: "debug"
   # log_path: "/var/log/exporter.log"
+
+# 服务器配置
+server:
+  # 优雅关闭超时时间，支持时间单位：30s, 1m, 2m30s 等
+  shutdownTimeout: "30s"
 
 ```
 
