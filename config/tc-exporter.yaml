@@ -5,3 +5,8 @@ log:
   level: "debug"
   log_path: "/var/log/tc-exporter.log"
 
+# 服务器配置
+server:
+  # 优雅关闭超时时间，支持时间单位：30s, 1m, 2m30s 等
+  shutdownTimeout: "30s"
+
