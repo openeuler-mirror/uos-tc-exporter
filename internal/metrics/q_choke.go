@@ -97,6 +97,11 @@ func (qd *QdiscChoke) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// ID returns a unique identifier for this metric
+func (qd *QdiscChoke) ID() string {
+	return "qdisc_choke"
+}
+
 type qdiscChokeEarly struct {
 	*baseMetrics
 }

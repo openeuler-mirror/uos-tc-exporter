@@ -112,6 +112,11 @@ func (qd *QdiscFqCodel) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// ID returns a unique identifier for this metric
+func (qd *QdiscFqCodel) ID() string {
+	return "qdisc_fq_codel"
+}
+
 type qdiscFqCodelCeMark struct {
 	*baseMetrics
 }

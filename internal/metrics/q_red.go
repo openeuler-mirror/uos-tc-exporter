@@ -94,6 +94,11 @@ func (qd *QdiscRed) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// ID returns a unique identifier for this metric
+func (qd *QdiscRed) ID() string {
+	return "qdisc_red"
+}
+
 type qdiscRedEarly struct {
 	*baseMetrics
 }

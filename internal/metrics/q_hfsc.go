@@ -91,6 +91,11 @@ func (qd *QdiscHfsc) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// ID returns a unique identifier for this metric
+func (qd *QdiscHfsc) ID() string {
+	return "qdisc_hfsc"
+}
+
 type qdiscHfscLevel struct {
 	*baseMetrics
 }

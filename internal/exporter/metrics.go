@@ -7,4 +7,7 @@ import "github.com/prometheus/client_golang/prometheus"
 
 type Metric interface {
 	Collect(ch chan<- prometheus.Metric)
+	// ID returns a unique identifier for this metric
+	// This should be stable across program restarts and unique within the registry
+	ID() string
 }

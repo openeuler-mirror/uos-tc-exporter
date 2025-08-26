@@ -91,6 +91,11 @@ func (qd *QdiscHtb) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// ID returns a unique identifier for this metric
+func (qd *QdiscHtb) ID() string {
+	return "qdisc_htb"
+}
+
 type qdiscHtbBorrows struct {
 	*baseMetrics
 }

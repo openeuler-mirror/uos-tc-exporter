@@ -35,3 +35,8 @@ func (c *BuildInfo) Collect(ch chan<- prometheus.Metric) {
 			version.Branch,
 			version.GoVersion})
 }
+
+// ID returns a unique identifier for this metric
+func (c *BuildInfo) ID() string {
+	return "build_info"
+}
