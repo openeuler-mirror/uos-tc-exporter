@@ -88,6 +88,11 @@ func (qd *QdiscCbq) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// ID returns a unique identifier for this metric
+func (qd *QdiscCbq) ID() string {
+	return "qdisc_cbq"
+}
+
 type qdiscCbqAvgIdle struct {
 	*baseMetrics
 }

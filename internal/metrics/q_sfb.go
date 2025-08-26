@@ -126,6 +126,11 @@ func (qd *QdiscSfb) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// ID returns a unique identifier for this metric
+func (qd *QdiscSfb) ID() string {
+	return "qdisc_sfb"
+}
+
 type qdiscSfbAvgProbe struct {
 	*baseMetrics
 }

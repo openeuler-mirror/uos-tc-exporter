@@ -138,6 +138,11 @@ func (cls *Class) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// ID returns a unique identifier for this metric
+func (c *Class) ID() string {
+	return "qclass"
+}
+
 type ClassBytesTotal struct {
 	*baseMetrics
 }

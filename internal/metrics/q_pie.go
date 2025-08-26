@@ -125,6 +125,11 @@ func (qd *QdiscPie) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// ID returns a unique identifier for this metric
+func (qd *QdiscPie) ID() string {
+	return "qdisc_pie"
+}
+
 type qdiscPieAvgDqRate struct {
 	*baseMetrics
 }
