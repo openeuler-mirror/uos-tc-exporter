@@ -2,8 +2,17 @@ address: "127.0.0.1"
 port: 9062
 metricsPath: "/metrics"
 log:
-  level: "debug"
+  level: "info"  # 生产环境建议使用 info 级别
   log_path: "/var/log/tc-exporter.log"
+
+# 指标收集优化配置
+metrics:
+  # 日志输出间隔（秒），减少重复日志
+  log_interval: 5
+  # 是否启用详细调试日志
+  debug_logging: false
+  # 是否启用性能统计
+  performance_stats: true
 
 # 服务器配置
 server:
