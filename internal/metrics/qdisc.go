@@ -7,7 +7,6 @@ import (
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
 	"gitee.com/openeuler/uos-tc-exporter/internal/tc"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 )
 
 func init() {
@@ -42,27 +41,30 @@ func NewQdisc() *Qdisc {
 }
 
 func (qd *Qdisc) Collect(ch chan<- prometheus.Metric) {
-	logrus.Info("Start collecting qdisc metrics")
-	logrus.Info("get net namespace list")
+	// 使用优化的日志记录器
+	logger := GetMetricsLogger()
+	logger.LogCollectionStart("qdisc")
+
 	nsList, err := tc.GetNetNameSpaceList()
 	if err != nil {
-		logrus.Warnf("Get net namespace list failed: %v", err)
+		logger.LogError("qdisc", "get net namespace list", err)
 		return
 	}
 	if len(nsList) == 0 {
-		logrus.Info("No net namespace found")
+		logger.LogNoData("qdisc", "No net namespace found")
 		return
 	}
+
 	for _, ns := range nsList {
 		devices, err := tc.GetInterfaceInNetNS(ns)
 		if err != nil {
-			logrus.Warnf("Get interface in netns %s failed: %v", ns, err)
+			logger.LogError("qdisc", "get interface in netns", err)
 			continue
 		}
 		for _, device := range devices {
 			qdiscs, err := tc.GetQdiscs(device.Index, ns)
 			if err != nil {
-				logrus.Warnf("Get qdiscs in netns %s failed: %v", ns, err)
+				logger.LogError("qdisc", "get qdiscs in netns", err)
 				continue
 			}
 			for _, qdisc := range qdiscs {
@@ -80,9 +82,7 @@ func (qd *Qdisc) Collect(ch chan<- prometheus.Metric) {
 						float64(qdisc.Stats2.Requeues),
 						[]string{ns,
 							device.Attributes.Name})
-				} else {
-					logrus.Debug("stats2 struct is empty for this qdisc", "qdisc",
-						qdisc)
+					logger.IncrementMetricsCount("qdisc", 1)
 				}
 				if qdisc.Stats != nil {
 					bytes = float64(qdisc.Stats.Bytes)
@@ -130,9 +130,13 @@ func (qd *Qdisc) Collect(ch chan<- prometheus.Metric) {
 					float64(qdisc.Stats.Pps),
 					[]string{ns,
 						device.Attributes.Name})
+				logger.IncrementMetricsCount("qdisc", 8) // 统计收集的指标数量
 			}
 		}
 	}
+
+	// 记录收集完成
+	logger.LogCollectionComplete("qdisc")
 }
 
 // ID returns a unique identifier for this metric
