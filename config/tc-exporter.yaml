@@ -14,6 +14,24 @@ metrics:
   # 是否启用性能统计
   performance_stats: true
 
+# 应用监控配置
+monitoring:
+  # 是否启用应用监控
+  enabled: true
+  # 是否启用性能监控
+  performance_monitoring: true
+  # 是否启用业务指标
+  enable_business_metrics: true
+  # 指标收集间隔
+  collection_interval: "30s"
+  # 统计信息保留时间
+  stats_retention: "24h"
+  # 应用信息
+  app_info:
+    version: "1.0.0"
+    build_time: "2025-01-01"
+    go_version: "1.25.0"
+
 # 服务器配置
 server:
   # 优雅关闭超时时间，支持时间单位：30s, 1m, 2m30s 等
