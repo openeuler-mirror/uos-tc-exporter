@@ -123,15 +123,15 @@ metrics:
 | 指标名称 | 类型 | 说明 |
 |---------|------|------|
 | `app_info` | Gauge | 应用信息（版本、构建时间、Go版本） |
-| `go_goroutines` | Gauge | 当前goroutine数量 |
-| `go_threads` | Gauge | OS线程数量 |
-| `go_heap_alloc_bytes` | Gauge | 堆内存分配字节数 |
-| `go_heap_sys_bytes` | Gauge | 从系统获取的堆内存字节数 |
+| `app_go_goroutines` | Gauge | 当前goroutine数量 (应用特定) |
+| `app_go_threads` | Gauge | OS线程数量 (应用特定) |
+| `app_go_heap_alloc_bytes` | Gauge | 堆内存分配字节数 (应用特定) |
+| `app_go_heap_sys_bytes` | Gauge | 从系统获取的堆内存字节数 (应用特定) |
 | `metrics_collection_duration_seconds` | Histogram | 指标收集耗时分布 |
 | `metrics_collection_total` | Counter | 指标收集总次数 |
 | `metrics_collection_errors_total` | Counter | 指标收集错误次数 |
-| `system_uptime_seconds` | Gauge | 系统运行时间 |
-| `process_start_time_seconds` | Gauge | 进程启动时间 |
+| `app_system_uptime_seconds` | Gauge | 系统运行时间 (应用特定) |
+| `app_process_start_time_seconds` | Gauge | 进程启动时间 (应用特定) |
 | `custom_metrics_count` | Gauge | 自定义指标数量 |
 | `error_rate` | Gauge | 错误率（0-1） |
 
