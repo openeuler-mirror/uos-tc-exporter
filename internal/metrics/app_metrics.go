@@ -60,24 +60,24 @@ func NewAppMetrics() *AppMetrics {
 		// 运行时指标
 		goGoroutines: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "go_goroutines",
-				Help: "Number of goroutines that currently exist",
+				Name: "app_go_goroutines",
+				Help: "Number of goroutines that currently exist (app-specific)",
 			},
 			func() float64 { return float64(runtime.NumGoroutine()) },
 		),
 
 		goThreads: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "go_threads",
-				Help: "Number of OS threads created",
+				Name: "app_go_threads",
+				Help: "Number of OS threads created (app-specific)",
 			},
 			func() float64 { return float64(runtime.GOMAXPROCS(0)) },
 		),
 
 		goHeapAlloc: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "go_heap_alloc_bytes",
-				Help: "Heap memory usage: bytes allocated",
+				Name: "app_go_heap_alloc_bytes",
+				Help: "Heap memory usage: bytes allocated (app-specific)",
 			},
 			func() float64 {
 				var m runtime.MemStats
@@ -88,8 +88,8 @@ func NewAppMetrics() *AppMetrics {
 
 		goHeapSys: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "go_heap_sys_bytes",
-				Help: "Heap memory usage: bytes obtained from system",
+				Name: "app_go_heap_sys_bytes",
+				Help: "Heap memory usage: bytes obtained from system (app-specific)",
 			},
 			func() float64 {
 				var m runtime.MemStats
@@ -100,8 +100,8 @@ func NewAppMetrics() *AppMetrics {
 
 		goHeapIdle: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "go_heap_idle_bytes",
-				Help: "Heap memory usage: bytes in idle spans",
+				Name: "app_go_heap_idle_bytes",
+				Help: "Heap memory usage: bytes in idle spans (app-specific)",
 			},
 			func() float64 {
 				var m runtime.MemStats
@@ -112,8 +112,8 @@ func NewAppMetrics() *AppMetrics {
 
 		goHeapInuse: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "go_heap_inuse_bytes",
-				Help: "Heap memory usage: bytes in in-use spans",
+				Name: "app_go_heap_inuse_bytes",
+				Help: "Heap memory usage: bytes in in-use spans (app-specific)",
 			},
 			func() float64 {
 				var m runtime.MemStats
@@ -124,8 +124,8 @@ func NewAppMetrics() *AppMetrics {
 
 		goHeapReleased: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "go_heap_released_bytes",
-				Help: "Heap memory usage: bytes released to OS",
+				Name: "app_go_heap_released_bytes",
+				Help: "Heap memory usage: bytes released to OS (app-specific)",
 			},
 			func() float64 {
 				var m runtime.MemStats
@@ -136,8 +136,8 @@ func NewAppMetrics() *AppMetrics {
 
 		goHeapObjects: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "go_heap_objects",
-				Help: "Heap memory usage: total number of allocated objects",
+				Name: "app_go_heap_objects",
+				Help: "Heap memory usage: total number of allocated objects (app-specific)",
 			},
 			func() float64 {
 				var m runtime.MemStats
@@ -172,16 +172,16 @@ func NewAppMetrics() *AppMetrics {
 		// 系统指标
 		systemUptime: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "system_uptime_seconds",
-				Help: "System uptime in seconds",
+				Name: "app_system_uptime_seconds",
+				Help: "System uptime in seconds (app-specific)",
 			},
 			func() float64 { return float64(time.Now().Unix()) },
 		),
 
 		processStartTime: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
-				Name: "process_start_time_seconds",
-				Help: "Start time of the process since unix epoch in seconds",
+				Name: "app_process_start_time_seconds",
+				Help: "Start time of the process since unix epoch in seconds (app-specific)",
 			},
 			func() float64 { return float64(processStartTime) },
 		),
@@ -287,4 +287,3 @@ func RecordError() {
 func RecordOperation() {
 	totalOperations++
 }
-
