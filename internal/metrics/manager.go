@@ -19,9 +19,7 @@ type Manager struct {
 	appMetrics      *AppMetrics
 	businessMetrics *BusinessMetrics
 
-	// 性能监控
-	performanceEnabled bool
-	collectionStats    *CollectionStats
+	collectionStats *CollectionStats
 
 	// 配置
 	config *ManagerConfig

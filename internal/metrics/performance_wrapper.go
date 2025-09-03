@@ -88,9 +88,3 @@ func WrapAllMetrics() {
 	// 2. 在指标注册时直接使用包装器
 	// 3. 使用反射（不推荐）
 }
-
-// isWrapped 检查指标是否已经被包装
-func isWrapped(metric exporter.Metric) bool {
-	// 通过ID判断是否已经被包装
-	return len(metric.ID()) > 12 && metric.ID()[:12] == "perf_wrapper"
-}
