@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 UnionTech Software Technology Co., Ltd.
 // SPDX-License-Identifier: MIT
 
-package metrics
+package metrics_bak
 
 import (
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
@@ -12,26 +12,26 @@ import (
 
 func init() {
 	exporter.Register(
-		NewQdiscHtb())
+		NewQdiscRed())
 }
 
-type QdiscHtb struct {
-	qdiscHtbBorrows
-	qdiscHtbCtokens
-	qdiscHtbGiants
-	qdiscHtbLends
+type QdiscRed struct {
+	qdiscRedEarly
+	qdiscRedMarked
+	qdiscRedOther
+	qdiscRedPdrop
 }
 
-func NewQdiscHtb() *QdiscHtb {
-	return &QdiscHtb{
-		qdiscHtbBorrows: *newQdiscHtbBorrows(),
-		qdiscHtbCtokens: *newQdiscHtbCtokens(),
-		qdiscHtbGiants:  *newQdiscHtbGiants(),
-		qdiscHtbLends:   *newQdiscHtbLends(),
+func NewQdiscRed() *QdiscRed {
+	return &QdiscRed{
+		qdiscRedEarly:  *newQdiscRedEarly(),
+		qdiscRedMarked: *newQdiscRedMarked(),
+		qdiscRedOther:  *newQdiscRedOther(),
+		qdiscRedPdrop:  *newQdiscRedPdrop(),
 	}
 }
 
-func (qd *QdiscHtb) Collect(ch chan<- prometheus.Metric) {
+func (qd *QdiscRed) Collect(ch chan<- prometheus.Metric) {
 	logrus.Info("Start collecting qdisc metrics")
 	logrus.Info("get net namespace list")
 	nsList, err := tc.GetNetNameSpaceList()
@@ -56,35 +56,38 @@ func (qd *QdiscHtb) Collect(ch chan<- prometheus.Metric) {
 				continue
 			}
 			for _, qdisc := range qdiscs {
-				if qdisc.Kind != "htb" {
+				if qdisc.Kind != "red" {
 					continue
 				}
 				if qdisc.XStats == nil {
 					continue
 				}
-				if qdisc.XStats.Htb == nil {
+				if qdisc.XStats.Red == nil {
 					continue
 				}
-				qd.qdiscHtbBorrows.Collect(ch,
-					float64(qdisc.XStats.Htb.Borrows),
+				qd.qdiscRedEarly.Collect(ch,
+					float64(qdisc.XStats.Red.Early),
 					[]string{ns,
 						device.Attributes.Name,
-						"htb"})
-				qd.qdiscHtbCtokens.Collect(ch,
-					float64(qdisc.XStats.Htb.CTokens),
+						"red"})
+
+				qd.qdiscRedMarked.Collect(ch,
+					float64(qdisc.XStats.Red.Marked),
 					[]string{ns,
 						device.Attributes.Name,
-						"htb"})
-				qd.qdiscHtbGiants.Collect(ch,
-					float64(qdisc.XStats.Htb.Giants),
+						"red"})
+
+				qd.qdiscRedOther.Collect(ch,
+					float64(qdisc.XStats.Red.Other),
 					[]string{ns,
 						device.Attributes.Name,
-						"htb"})
-				qd.qdiscHtbLends.Collect(ch,
-					float64(qdisc.XStats.Htb.Lends),
+						"red"})
+
+				qd.qdiscRedPdrop.Collect(ch,
+					float64(qdisc.XStats.Red.PDrop),
 					[]string{ns,
 						device.Attributes.Name,
-						"htb"})
+						"red"})
 
 			}
 		}
@@ -92,26 +95,26 @@ func (qd *QdiscHtb) Collect(ch chan<- prometheus.Metric) {
 }
 
 // ID returns a unique identifier for this metric
-func (qd *QdiscHtb) ID() string {
-	return "qdisc_htb"
+func (qd *QdiscRed) ID() string {
+	return "qdisc_red"
 }
 
-type qdiscHtbBorrows struct {
+type qdiscRedEarly struct {
 	*baseMetrics
 }
 
-func newQdiscHtbBorrows() *qdiscHtbBorrows {
+func newQdiscRedEarly() *qdiscRedEarly {
 	logrus.Debug("create qdiscPieAvgDqRate")
-	return &qdiscHtbBorrows{
+	return &qdiscRedEarly{
 		NewMetrics(
-			"qdisc_htb_borrows",
-			"HTB borrows xstat",
+			"qdisc_red_early",
+			"RED early xstat",
 			[]string{"namespace",
 				"device",
 				"kind"})}
 }
 
-func (qd *qdiscHtbBorrows) Collect(ch chan<- prometheus.Metric,
+func (qd *qdiscRedEarly) Collect(ch chan<- prometheus.Metric,
 	value float64,
 	labels []string) {
 	qd.collect(ch,
@@ -119,22 +122,22 @@ func (qd *qdiscHtbBorrows) Collect(ch chan<- prometheus.Metric,
 		labels)
 }
 
-type qdiscHtbCtokens struct {
+type qdiscRedMarked struct {
 	*baseMetrics
 }
 
-func newQdiscHtbCtokens() *qdiscHtbCtokens {
-	logrus.Debug("create qdiscHtbCtokens")
-	return &qdiscHtbCtokens{
+func newQdiscRedMarked() *qdiscRedMarked {
+	logrus.Debug("create qdiscPieAvgDqRate")
+	return &qdiscRedMarked{
 		NewMetrics(
-			"qdisc_htb_ctokens",
-			"HTB ctokens xstat",
+			"qdisc_red_marked",
+			"RED marked xstat",
 			[]string{"namespace",
 				"device",
 				"kind"})}
 }
 
-func (qd *qdiscHtbCtokens) Collect(ch chan<- prometheus.Metric,
+func (qd *qdiscRedMarked) Collect(ch chan<- prometheus.Metric,
 	value float64,
 	labels []string) {
 	qd.collect(ch,
@@ -142,22 +145,22 @@ func (qd *qdiscHtbCtokens) Collect(ch chan<- prometheus.Metric,
 		labels)
 }
 
-type qdiscHtbGiants struct {
+type qdiscRedOther struct {
 	*baseMetrics
 }
 
-func newQdiscHtbGiants() *qdiscHtbGiants {
-	logrus.Debug("create qdiscHtbGiants")
-	return &qdiscHtbGiants{
+func newQdiscRedOther() *qdiscRedOther {
+	logrus.Debug("create qdiscPieAvgDqRate")
+	return &qdiscRedOther{
 		NewMetrics(
-			"qdisc_htb_giants",
-			"HTB giants xstat",
+			"qdisc_red_other",
+			"RED other xstat",
 			[]string{"namespace",
 				"device",
 				"kind"})}
 }
 
-func (qd *qdiscHtbGiants) Collect(ch chan<- prometheus.Metric,
+func (qd *qdiscRedOther) Collect(ch chan<- prometheus.Metric,
 	value float64,
 	labels []string) {
 	qd.collect(ch,
@@ -165,22 +168,22 @@ func (qd *qdiscHtbGiants) Collect(ch chan<- prometheus.Metric,
 		labels)
 }
 
-type qdiscHtbLends struct {
+type qdiscRedPdrop struct {
 	*baseMetrics
 }
 
-func newQdiscHtbLends() *qdiscHtbLends {
-	logrus.Debug("create qdiscHtbLends")
-	return &qdiscHtbLends{
+func newQdiscRedPdrop() *qdiscRedPdrop {
+	logrus.Debug("create qdiscPieAvgDqRate")
+	return &qdiscRedPdrop{
 		NewMetrics(
-			"qdisc_htb_lends",
-			"HTB lends xstat",
+			"qdisc_red_pdrop",
+			"RED pdrop xstat",
 			[]string{"namespace",
 				"device",
 				"kind"})}
 }
 
-func (qd *qdiscHtbLends) Collect(ch chan<- prometheus.Metric,
+func (qd *qdiscRedPdrop) Collect(ch chan<- prometheus.Metric,
 	value float64,
 	labels []string) {
 	qd.collect(ch,

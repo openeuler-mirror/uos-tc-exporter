@@ -1,4 +1,8 @@
 // SPDX-FileCopyrightText: 2025 UnionTech Software Technology Co., Ltd.
 // SPDX-License-Identifier: MIT
 
-package metrics
+package interfaces
+
+type AppCollector interface {
+	MetricCollector
+}
