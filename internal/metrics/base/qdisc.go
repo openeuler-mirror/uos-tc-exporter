@@ -30,19 +30,19 @@ func NewQdiscBase(qdiscType, name, description string, config interfaces.Collect
 	}
 }
 
-// collectMetrics 实现 qdisc 收集逻辑
-func (qb *QdiscBase) collectMetrics(ch chan<- prometheus.Metric) {
-	qb.logger.Info("Start collecting qdisc metrics")
+// CollectMetrics 实现 qdisc 收集逻辑
+func (qb *QdiscBase) CollectMetrics(ch chan<- prometheus.Metric) {
+	qb.Logger.Info("Start collecting qdisc metrics")
 
 	nsList, err := tc.GetNetNameSpaceList()
 	if err != nil {
-		qb.logger.Warnf("Get net namespace list failed: %v", err)
+		qb.Logger.Warnf("Get net namespace list failed: %v", err)
 		qb.SetLastError(err)
 		return
 	}
 
 	if len(nsList) == 0 {
-		qb.logger.Info("No net namespace found")
+		qb.Logger.Info("No net namespace found")
 		return
 	}
 
@@ -55,7 +55,7 @@ func (qb *QdiscBase) collectMetrics(ch chan<- prometheus.Metric) {
 func (qb *QdiscBase) collectForNamespace(ch chan<- prometheus.Metric, ns string) {
 	devices, err := tc.GetInterfaceInNetNS(ns)
 	if err != nil {
-		qb.logger.Warnf("Get interface in netns %s failed: %v", ns, err)
+		qb.Logger.Warnf("Get interface in netns %s failed: %v", ns, err)
 		return
 	}
 
@@ -71,7 +71,7 @@ func (qb *QdiscBase) collectForDevice(ch chan<- prometheus.Metric, ns string, de
 
 	qdiscs, err := tc.GetQdiscs(deviceIndex, ns)
 	if err != nil {
-		qb.logger.Warnf("Get qdiscs in netns %s failed: %v", ns, err)
+		qb.Logger.Warnf("Get qdiscs in netns %s failed: %v", ns, err)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (qb *QdiscBase) collectForDevice(ch chan<- prometheus.Metric, ns string, de
 			continue
 		}
 
-		qb.collectQdiscMetrics(ch, ns, deviceName, &qdisc)
+		qb.CollectQdiscMetrics(ch, ns, deviceName, &qdisc)
 	}
 }
 
@@ -97,8 +97,8 @@ func (qb *QdiscBase) ValidateQdisc(qdisc any) bool {
 	return true
 }
 
-// collectQdiscMetrics 收集 qdisc 指标
-func (qb *QdiscBase) collectQdiscMetrics(ch chan<- prometheus.Metric, ns, deviceName string, qdisc any) {
+// CollectQdiscMetrics 收集 qdisc 指标
+func (qb *QdiscBase) CollectQdiscMetrics(ch chan<- prometheus.Metric, ns, deviceName string, qdisc any) {
 	// 子类需要实现具体的指标收集逻辑
 }
 
@@ -112,7 +112,7 @@ func (qb *QdiscBase) GetSupportedMetrics() []string {
 	return qb.SupportedMetrics
 }
 
-// addSupportedMetric 添加支持的指标
-func (qb *QdiscBase) addSupportedMetric(metricName string) {
+// AddSupportedMetric 添加支持的指标
+func (qb *QdiscBase) AddSupportedMetric(metricName string) {
 	qb.SupportedMetrics = append(qb.SupportedMetrics, metricName)
 }
