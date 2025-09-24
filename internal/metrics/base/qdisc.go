@@ -14,9 +14,9 @@ import (
 // QdiscBase qdisc 基础实现
 type QdiscBase struct {
 	*CollectorBase
-	qdiscType        string
-	supportedMetrics []string
-	labelNames       []string
+	QdiscType        string
+	SupportedMetrics []string
+	LabelNames       []string
 }
 
 // NewQdiscBase 创建 qdisc 基础实例
@@ -24,9 +24,9 @@ func NewQdiscBase(qdiscType, name, description string, config interfaces.Collect
 	base := NewCollectorBase("qdisc_"+qdiscType, name, description, config, logger)
 	return &QdiscBase{
 		CollectorBase:    base,
-		qdiscType:        qdiscType,
-		supportedMetrics: make([]string, 0),
-		labelNames:       []string{"namespace", "device", "kind"},
+		QdiscType:        qdiscType,
+		SupportedMetrics: make([]string, 0),
+		LabelNames:       []string{"namespace", "device", "kind"},
 	}
 }
 
@@ -37,7 +37,7 @@ func (qb *QdiscBase) collectMetrics(ch chan<- prometheus.Metric) {
 	nsList, err := tc.GetNetNameSpaceList()
 	if err != nil {
 		qb.logger.Warnf("Get net namespace list failed: %v", err)
-		qb.setLastError(err)
+		qb.SetLastError(err)
 		return
 	}
 
@@ -104,15 +104,15 @@ func (qb *QdiscBase) collectQdiscMetrics(ch chan<- prometheus.Metric, ns, device
 
 // GetQdiscType 返回 qdisc 类型
 func (qb *QdiscBase) GetQdiscType() string {
-	return qb.qdiscType
+	return qb.QdiscType
 }
 
 // GetSupportedMetrics 返回支持的指标列表
 func (qb *QdiscBase) GetSupportedMetrics() []string {
-	return qb.supportedMetrics
+	return qb.SupportedMetrics
 }
 
 // addSupportedMetric 添加支持的指标
 func (qb *QdiscBase) addSupportedMetric(metricName string) {
-	qb.supportedMetrics = append(qb.supportedMetrics, metricName)
+	qb.SupportedMetrics = append(qb.SupportedMetrics, metricName)
 }
