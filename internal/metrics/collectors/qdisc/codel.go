@@ -5,56 +5,158 @@ package qdisc
 
 import (
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/base"
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
+	"github.com/florianl/go-tc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
 type CodelCollector struct {
 	*base.QdiscBase
-	metrics map[string]*prometheus.Desc
 }
 
-func NewCodelCollector(config interfaces.CollectorConfig, logger *logrus.Logger) *CodelCollector {
+func NewCodelCollector(cfg config.CollectorConfig, logger *logrus.Logger) *CodelCollector {
+	base := base.NewQdiscBase("codel", "qdisc_codel", "Codel qdisc metrics", &cfg, logger)
 	collector := &CodelCollector{
-		QdiscBase: base.NewQdiscBase("codel", "CoDel Queue Discipline", "CoDel (Controlled Delay) is an active queue management algorithm designed to combat bufferbloat.", config, logger),
-		metrics:   make(map[string]*prometheus.Desc),
+		QdiscBase: base,
 	}
-
-	collector.supportedMetrics = []string{
-		"backlog_bytes",
-		"backlog_packets",
-		"maxpacket",
-		"drops",
-		"overlimits",
-		"requeues",
-		"newflows",
-		"oldflows",
-		"ecn_mark",
-		"drop_overlimit",
-	}
-
-	for _, metric := range collector.supportedMetrics {
-		desc := prometheus.NewDesc(
-			prometheus.BuildFQName("tc", "qdisc_codel", metric),
-			metric+" of CoDel qdisc",
-			collector.LabelNames,
-			nil,
-		)
-		collector.metrics[metric] = desc
-	}
-
+	collector.initializeMetrics(&cfg)
 	return collector
 }
 
-func (cc *CodelCollector) Collect(ch chan<- prometheus.Metric) {
-	cc.collectMetrics(ch)
+// func (c *CodelCollector) initializeMetrics(cfg *config.CollectorConfig) {
+// 	labelNames := c.LabelNames
+// 	// CE Mark 指标
+// 	c.AddMetric("ce_mark", prometheus.NewDesc(
+// 		"qdisc_codel_ce_mark",
+// 		"Number of packets marked with CE (Congestion Experienced) by CoDel",
+// 		labelNames, nil,
+// 	))
+
+//		c.AddSupportedMetric("ce_mark")
+//		// Count 指标
+//		c.AddMetric("count", prometheus.NewDesc(
+//			"qdisc_codel_count",
+//			"Current number of packets in the CoDel queue",
+//			labelNames, nil,
+//		))
+//		c.AddSupportedMetric("count")
+//		// Drop Next 指标
+//		c.AddMetric("drop_next", prometheus.NewDesc(
+//			"qdisc_codel_drop_next",
+//			"Time when the next packet will be dropped by CoDel",
+//			labelNames, nil,
+//		))
+//		c.AddSupportedMetric("drop_next")
+//		// Drop Overlimit 指标
+//		c.AddMetric("drop_overlimit", prometheus.NewDesc(
+//			"qdisc_codel_drop_overlimit",
+//			"Number of packets dropped because they exceeded the CoDel limit",
+//			labelNames, nil,
+//		))
+//		c.AddSupportedMetric("drop_overlimit")
+//		// Dropping 指标
+//		c.AddMetric("dropping", prometheus.NewDesc(
+//			"qdisc_codel_dropping",
+//			"Indicates whether CoDel is currently dropping packets",
+//			labelNames, nil,
+//		))
+//		c.AddSupportedMetric("dropping")
+//		// Ecn Mark 指标
+//		c.AddMetric("ecn_mark", prometheus.NewDesc(
+//			"qdisc_codel_ecn_mark",
+//			"Number of packets marked with ECN (Explicit Congestion Notification) by CoDel",
+//			labelNames, nil,
+//		))
+//		c.AddSupportedMetric("ecn_mark")
+//		// LDelay 指标
+//		c.AddMetric("ldelay", prometheus.NewDesc(
+//			"qdisc_codel_ldelay",
+//			"Last measured delay of packets in the CoDel queue (in microseconds)",
+//			labelNames, nil,
+//		))
+//		c.AddSupportedMetric("ldelay")
+//		// Max Packet 指标
+//		c.AddMetric("max_packet", prometheus.NewDesc(
+//			"qdisc_codel_max_packet",
+//			"Maximum packet size handled by CoDel (in bytes)",
+//			labelNames, nil,
+//		))
+//		c.AddSupportedMetric("max_packet")
+//	}
+func (c *CodelCollector) initializeMetrics(cfg *config.CollectorConfig) {
+	labelNames := c.LabelNames
+	for metricName, metricConfig := range cfg.GetMetrics() {
+		desc := prometheus.NewDesc(
+			"qdisc_codel_"+metricName,
+			metricConfig.GetHelp(),
+			labelNames, nil,
+		)
+		c.AddMetric(metricName, desc)
+		c.AddSupportedMetric(metricName)
+	}
 }
 
-func (cc *CodelCollector) getQdiscType() string {
-	return cc.QdiscType
+// ValidateQdisc 验证 qdisc 是否支持
+func (c *CodelCollector) ValidateQdisc(qdisc any) bool {
+	tcQdisc, ok := qdisc.(*tc.Object)
+	if !ok {
+		return false
+	}
+	return tcQdisc.Kind == "codel"
 }
 
-func (cc *CodelCollector) getMetrics() map[string]*prometheus.Desc {
-	return cc.metrics
+// CollectQdiscMetrics 收集 qdisc 指标
+func (c *CodelCollector) CollectQdiscMetrics(ch chan<- prometheus.Metric, ns, deviceName string, qdisc any) {
+	tcQdisc, ok := qdisc.(*tc.Object)
+	if !ok {
+		c.Logger.Warnf("Invalid qdisc type for device %s in netns %s", deviceName, ns)
+		return
+	}
+	if tcQdisc.XStats == nil {
+		c.Logger.Warnf("No extended stats for codel qdisc on device %s in netns %s", deviceName, ns)
+		return
+	}
+	if tcQdisc.XStats.Codel == nil {
+		c.Logger.Warnf("No codel stats for codel qdisc on device %s in netns %s", deviceName, ns)
+		return
+	}
+	attrs := tcQdisc.XStats.Codel
+
+	// 根据配置收集指标
+	for _, metricName := range c.GetSupportedMetrics() {
+		var value float64
+		switch metricName {
+		case "ce_mark":
+			value = float64(attrs.CeMark)
+		case "count":
+			value = float64(attrs.Count)
+		case "drop_next":
+			value = float64(attrs.DropNext)
+		case "drop_overlimit":
+			value = float64(attrs.DropOverlimit)
+		case "dropping":
+			value = float64(attrs.Dropping)
+		case "ecn_mark":
+			value = float64(attrs.EcnMark)
+		case "ldelay":
+			value = float64(attrs.LDelay)
+		case "max_packet":
+			value = float64(attrs.MaxPacket)
+		default:
+			c.Logger.Warnf("Unsupported metric %s for codel qdisc on device %s in netns %s", metricName, deviceName, ns)
+			continue
+		}
+		desc, ok := c.GetMetric(metricName)
+		if !ok {
+			c.Logger.Warnf("Metric descriptor for %s not found on device %s in netns %s", metricName, deviceName, ns)
+			continue
+		}
+		ch <- prometheus.MustNewConstMetric(
+			desc,
+			prometheus.GaugeValue,
+			value,
+			ns, deviceName, "codel",
+		)
+	}
 }

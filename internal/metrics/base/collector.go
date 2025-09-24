@@ -20,7 +20,7 @@ type CollectorBase struct {
 	description string
 	enabled     bool
 	config      interfaces.CollectorConfig
-	logger      *logrus.Logger
+	Logger      *logrus.Logger
 	metrics     map[string]*prometheus.Desc
 	lastError   error
 	lastCollect time.Time
@@ -33,7 +33,7 @@ func NewCollectorBase(id, name, description string, config interfaces.CollectorC
 		description: description,
 		enabled:     true,
 		config:      config,
-		logger:      logger,
+		Logger:      logger,
 		metrics:     make(map[string]*prometheus.Desc),
 	}
 }

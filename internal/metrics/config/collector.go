@@ -3,63 +3,61 @@
 
 package config
 
-// MetricConfig 指标配置实现
-type MetricConfig struct {
-	name    string
-	enabled bool
-	help    string
-	mtype   string
-	labels  []string
-	buckets []float64
+import (
+	"time"
+
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+)
+
+// CollectorConfig 收集器配置接口
+type CollectorConfig struct {
+	enabled    bool
+	timeout    time.Duration
+	retryCount int
+	metrics    map[string]MetricConfig
+	// labels     []string
 }
 
-// NewMetricConfig 创建指标配置
-func NewMetricConfig(name, help, mtype string) *MetricConfig {
-	return &MetricConfig{
-		name:    name,
-		enabled: true,
-		help:    help,
-		mtype:   mtype,
-		labels:  []string{"namespace", "device", "kind"},
+// IsEnabled 实现 CollectorConfig 接口
+func (cc *CollectorConfig) IsEnabled() bool {
+	return cc.enabled
+}
+
+// GetTimeout 实现 CollectorConfig 接口
+func (cc *CollectorConfig) GetTimeout() time.Duration {
+	return cc.timeout
+}
+
+// GetRetryCount 实现 CollectorConfig 接口
+func (cc *CollectorConfig) GetRetryCount() int {
+	return cc.retryCount
+}
+
+// GetMetrics 实现 CollectorConfig 接口
+func (cc *CollectorConfig) GetMetrics() map[string]interfaces.MetricConfig {
+	convertedMetrics := make(map[string]interfaces.MetricConfig)
+	for key, value := range cc.metrics {
+		convertedMetrics[key] = &value
 	}
-}
-
-// GetName 实现 MetricConfig 接口
-func (mc *MetricConfig) GetName() string {
-	return mc.name
-}
-
-// IsEnabled 实现 MetricConfig 接口
-func (mc *MetricConfig) IsEnabled() bool {
-	return mc.enabled
-}
-
-// GetHelp 实现 MetricConfig 接口
-func (mc *MetricConfig) GetHelp() string {
-	return mc.help
-}
-
-// GetType 实现 MetricConfig 接口
-func (mc *MetricConfig) GetType() string {
-	return mc.mtype
-}
-
-// GetLabels 实现 MetricConfig 接口
-func (mc *MetricConfig) GetLabels() []string {
-	return mc.labels
+	return convertedMetrics
 }
 
 // SetEnabled 设置启用状态
-func (mc *MetricConfig) SetEnabled(enabled bool) {
-	mc.enabled = enabled
+func (cc *CollectorConfig) SetEnabled(enabled bool) {
+	cc.enabled = enabled
 }
 
-// SetLabels 设置标签
-func (mc *MetricConfig) SetLabels(labels []string) {
-	mc.labels = labels
+// SetTimeout 设置超时时间
+func (cc *CollectorConfig) SetTimeout(timeout time.Duration) {
+	cc.timeout = timeout
 }
 
-// SetBuckets 设置桶配置（用于直方图）
-func (mc *MetricConfig) SetBuckets(buckets []float64) {
-	mc.buckets = buckets
+// SetRetryCount 设置重试次数
+func (cc *CollectorConfig) SetRetryCount(count int) {
+	cc.retryCount = count
+}
+
+// AddMetric 添加指标配置
+func (cc *CollectorConfig) AddMetric(name string, config MetricConfig) {
+	cc.metrics[name] = config
 }
