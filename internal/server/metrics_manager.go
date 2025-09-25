@@ -5,7 +5,11 @@ package server
 
 import (
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
-	_ "gitee.com/openeuler/uos-tc-exporter/internal/metrics_bak"
+	// _ "gitee.com/openeuler/uos-tc-exporter/internal/metrics_bak"
+	_ "gitee.com/openeuler/uos-tc-exporter/internal/metrics/collectors/qdisc"
+
+	// _ "gitee.com/openeuler/uos-tc-exporter/internal/metrics/collectors/qdisc"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/sirupsen/logrus"

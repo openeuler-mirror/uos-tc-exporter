@@ -11,32 +11,32 @@ import (
 
 // CollectorConfig 收集器配置接口
 type CollectorConfig struct {
-	enabled    bool
-	timeout    time.Duration
-	retryCount int
-	metrics    map[string]MetricConfig
+	Enabled    bool
+	Timeout    time.Duration
+	RetryCount int
+	Metrics    map[string]MetricConfig
 	// labels     []string
 }
 
 // IsEnabled 实现 CollectorConfig 接口
 func (cc *CollectorConfig) IsEnabled() bool {
-	return cc.enabled
+	return cc.Enabled
 }
 
 // GetTimeout 实现 CollectorConfig 接口
 func (cc *CollectorConfig) GetTimeout() time.Duration {
-	return cc.timeout
+	return cc.Timeout
 }
 
 // GetRetryCount 实现 CollectorConfig 接口
 func (cc *CollectorConfig) GetRetryCount() int {
-	return cc.retryCount
+	return cc.RetryCount
 }
 
 // GetMetrics 实现 CollectorConfig 接口
 func (cc *CollectorConfig) GetMetrics() map[string]interfaces.MetricConfig {
 	convertedMetrics := make(map[string]interfaces.MetricConfig)
-	for key, value := range cc.metrics {
+	for key, value := range cc.Metrics {
 		convertedMetrics[key] = &value
 	}
 	return convertedMetrics
@@ -44,20 +44,20 @@ func (cc *CollectorConfig) GetMetrics() map[string]interfaces.MetricConfig {
 
 // SetEnabled 设置启用状态
 func (cc *CollectorConfig) SetEnabled(enabled bool) {
-	cc.enabled = enabled
+	cc.Enabled = enabled
 }
 
 // SetTimeout 设置超时时间
 func (cc *CollectorConfig) SetTimeout(timeout time.Duration) {
-	cc.timeout = timeout
+	cc.Timeout = timeout
 }
 
 // SetRetryCount 设置重试次数
 func (cc *CollectorConfig) SetRetryCount(count int) {
-	cc.retryCount = count
+	cc.RetryCount = count
 }
 
 // AddMetric 添加指标配置
 func (cc *CollectorConfig) AddMetric(name string, config MetricConfig) {
-	cc.metrics[name] = config
+	cc.Metrics[name] = config
 }

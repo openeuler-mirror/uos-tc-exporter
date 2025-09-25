@@ -4,12 +4,34 @@
 package qdisc
 
 import (
+	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/base"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
 	"github.com/florianl/go-tc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
+
+func init() {
+	mc := map[string]config.MetricConfig{
+		"ce_mark":        *config.NewMetricConfig("ce_mark", "Number of packets marked with CE (Congestion Experienced) by CoDel", "codel"),
+		"count":          *config.NewMetricConfig("count", "Current number of packets in the CoDel queue", "codel"),
+		"drop_next":      *config.NewMetricConfig("drop_next", "Time when the next packet will be dropped by CoDel", "codel"),
+		"drop_overlimit": *config.NewMetricConfig("drop_overlimit", "Number of packets dropped because they exceeded the CoDel limit", "codel"),
+		"dropping":       *config.NewMetricConfig("dropping", "Indicates whether CoDel is currently dropping packets", "codel"),
+		"ecn_mark":       *config.NewMetricConfig("ecn_mark", "Number of packets marked with ECN (Explicit Congestion Notification) by CoDel", "codel"),
+		"ldelay":         *config.NewMetricConfig("ldelay", "Last measured delay of packets in the CoDel queue (in microseconds)", "codel"),
+		"max_packet":     *config.NewMetricConfig("max_packet", "Maximum packet size handled by CoDel (in bytes)", "codel"),
+	}
+	code := NewCodelCollector(config.CollectorConfig{
+		Enabled:    true,
+		Timeout:    5,
+		RetryCount: 3,
+		Metrics:    mc},
+		logrus.New(),
+	)
+	exporter.Register(code)
+}
 
 type CodelCollector struct {
 	*base.QdiscBase
@@ -84,6 +106,7 @@ func NewCodelCollector(cfg config.CollectorConfig, logger *logrus.Logger) *Codel
 //		))
 //		c.AddSupportedMetric("max_packet")
 //	}
+
 func (c *CodelCollector) initializeMetrics(cfg *config.CollectorConfig) {
 	labelNames := c.LabelNames
 	for metricName, metricConfig := range cfg.GetMetrics() {
