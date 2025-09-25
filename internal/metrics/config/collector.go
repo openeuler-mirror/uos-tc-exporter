@@ -10,6 +10,8 @@ import (
 )
 
 // CollectorConfig 收集器配置接口
+// Updated fields to be exported
+
 type CollectorConfig struct {
 	Enabled    bool
 	Timeout    time.Duration
