@@ -5,6 +5,7 @@ package exporter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -61,9 +62,8 @@ func (cm *ConfigManager) LoadConfig() error {
 	// 检查文件是否存在
 	if !cm.fileExists() {
 		logrus.Warnf("Config file %s not found, using default config", cm.configPath)
-		return nil
+		return errors.New("config file not found")
 	}
-
 	// 读取配置文件
 	content, err := os.ReadFile(cm.configPath)
 	if err != nil {

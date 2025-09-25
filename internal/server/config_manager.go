@@ -39,11 +39,10 @@ func (cm *ConfigManager) LoadConfig() error {
 	if cm.configMgr != nil {
 		// 使用配置管理器加载配置
 		if err := cm.configMgr.LoadConfig(); err != nil {
-			logrus.Errorf("Failed to load config via config manager: %v", err)
+			// logrus.Errorf("Failed to load config via config manager: %v", err)
 			logrus.Info("Use default config")
 			return nil
 		}
-
 		// 获取配置并同步
 		cm.config = cm.configMgr.GetConfig()
 
@@ -59,13 +58,13 @@ func (cm *ConfigManager) LoadConfig() error {
 	content, err := os.ReadFile(*exporter.Configfile)
 	if err != nil {
 		logrus.Errorf("Failed to read config file: %v", err)
-		logrus.Info("Use default config")
+		logrus.Info("Using default configuration due to failure in loading or parsing the config file")
 		return nil
 	}
 	err = yaml.Unmarshal(content, &cm.config)
 	if err != nil {
 		logrus.Errorf("Failed to parse config file: %v", err)
-		logrus.Info("Use default config")
+		logrus.Info("Using default configuration due to failure in loading or parsing the config file")
 		return nil
 	}
 
@@ -80,7 +79,6 @@ func (cm *ConfigManager) LoadConfig() error {
 		}).Error("Configuration validation failed")
 		return customErr
 	}
-
 	logrus.Infof("Loaded config file from: %s", *exporter.Configfile)
 	logrus.Info("Config file loaded and validated successfully")
 	return nil
