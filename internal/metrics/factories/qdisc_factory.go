@@ -3,7 +3,12 @@
 
 package factories
 
-import "gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
+import (
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/collectors/qdisc"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+	"github.com/sirupsen/logrus"
+)
 
 type QdiscFactory struct {
 	configs map[string]*config.CollectorConfig
@@ -31,5 +36,20 @@ func (qf *QdiscFactory) GetSupportedTypes() []string {
 	return []string{
 		"codel", "cbq", "htb", "fq", "fq_codel",
 		"choke", "pie", "red", "sfb", "sfq", "hfsc",
+	}
+}
+
+func (qf *QdiscFactory) CreateCollector(qdiscType string) (interfaces.QdiscCollector, error) {
+	cfg, exists := qf.GetConfig(qdiscType)
+	if !exists {
+		cfg := config.NewCollectorConfig()
+		qf.AddConfig(qdiscType, cfg)
+	}
+	logger := logrus.New()
+	switch qdiscType {
+	case "codel":
+		return qdisc.NewCodelCollector(*cfg, logger), nil
+	default:
+		return nil, nil
 	}
 }

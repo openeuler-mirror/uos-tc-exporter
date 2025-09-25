@@ -17,7 +17,18 @@ type CollectorConfig struct {
 	Timeout    time.Duration
 	RetryCount int
 	Metrics    map[string]MetricConfig
-	// labels     []string
+	Labels     []string
+}
+
+// NewCollectorConfig 创建收集器配置
+func NewCollectorConfig() *CollectorConfig {
+	return &CollectorConfig{
+		Enabled:    true,
+		Timeout:    30 * time.Second,
+		RetryCount: 3,
+		Metrics:    make(map[string]MetricConfig),
+		Labels:     []string{"namespace", "device", "kind"},
+	}
 }
 
 // IsEnabled 实现 CollectorConfig 接口
