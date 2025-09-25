@@ -121,12 +121,8 @@ func (c *CodelCollector) initializeMetrics(cfg *config.CollectorConfig) {
 }
 
 // ValidateQdisc 验证 qdisc 是否支持
-func (c *CodelCollector) ValidateQdisc(qdisc any) bool {
-	tcQdisc, ok := qdisc.(*tc.Object)
-	if !ok {
-		return false
-	}
-	return tcQdisc.Kind == "codel"
+func (c *CodelCollector) ValidateQdisc(qdisc *tc.Object) bool {
+	return qdisc.Kind == "codel"
 }
 
 // CollectQdiscMetrics 收集 qdisc 指标

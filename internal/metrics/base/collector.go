@@ -71,7 +71,7 @@ func (cb *CollectorBase) SetEnabled(enabled bool) {
 	cb.enabled = enabled
 }
 
-func (cb *CollectorBase) GetConfig() interfaces.CollectorConfig {
+func (cb *CollectorBase) GetConfig() any {
 	return cb.config
 }
 func (cb *CollectorBase) SetConfig(config any) error {
