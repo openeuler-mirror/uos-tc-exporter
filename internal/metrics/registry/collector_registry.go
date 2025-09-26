@@ -4,6 +4,7 @@
 package registry
 
 import (
+	"fmt"
 	"sync"
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
@@ -29,4 +30,51 @@ func NewCollectorRegistry() *CollectorRegistry {
 		collectors: make(map[string]interfaces.MetricCollector),
 		factories:  make(map[string]CollectorFactory),
 	}
+}
+
+func (cr *CollectorRegistry) Register(collector interfaces.MetricCollector) error {
+	cr.mu.Lock()
+	defer cr.mu.Unlock()
+	if _, exists := cr.collectors[collector.ID()]; exists {
+		return fmt.Errorf("collector with ID %s already registered", collector.ID())
+	}
+	cr.collectors[collector.ID()] = collector
+	return nil
+}
+
+func (cr *CollectorRegistry) Unregister(collectorID string) {
+	cr.mu.Lock()
+	defer cr.mu.Unlock()
+	if _, exists := cr.collectors[collectorID]; !exists {
+		return
+	}
+	delete(cr.collectors, collectorID)
+}
+
+func (cr *CollectorRegistry) GetCollector(collectorID string) (interfaces.MetricCollector, bool) {
+	cr.mu.RLock()
+	defer cr.mu.RUnlock()
+	collector, exists := cr.collectors[collectorID]
+	return collector, exists
+}
+func (cr *CollectorRegistry) GetAllCollectors() []interfaces.MetricCollector {
+	cr.mu.RLock()
+	defer cr.mu.RUnlock()
+	collectors := make([]interfaces.MetricCollector, 0, len(cr.collectors))
+	for _, collector := range cr.collectors {
+		collectors = append(collectors, collector)
+	}
+	return collectors
+}
+
+func (cr *CollectorRegistry) GetEnableCollectors() []interfaces.MetricCollector {
+	cr.mu.RLock()
+	defer cr.mu.RUnlock()
+	collectors := make([]interfaces.MetricCollector, 0, len(cr.collectors))
+	for _, collector := range cr.collectors {
+		if collector.Enabled() {
+			collectors = append(collectors, collector)
+		}
+	}
+	return collectors
 }
