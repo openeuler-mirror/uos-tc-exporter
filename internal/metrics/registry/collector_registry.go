@@ -78,3 +78,39 @@ func (cr *CollectorRegistry) GetEnableCollectors() []interfaces.MetricCollector 
 	}
 	return collectors
 }
+
+func (cr *CollectorRegistry) RegisterFactory(factoryName string, factory CollectorFactory) error {
+	cr.mu.Lock()
+	defer cr.mu.Unlock()
+	if _, exists := cr.factories[factoryName]; exists {
+		return fmt.Errorf("factory with name %s already registered", factoryName)
+	}
+	cr.factories[factoryName] = factory
+	return nil
+}
+
+func (cr *CollectorRegistry) UnregisterFactory(factoryName string) {
+	cr.mu.Lock()
+	defer cr.mu.Unlock()
+	if _, exists := cr.factories[factoryName]; !exists {
+		return
+	}
+	delete(cr.factories, factoryName)
+}
+
+func (cr *CollectorRegistry) GetFactory(factoryName string) (CollectorFactory, bool) {
+	cr.mu.RLock()
+	defer cr.mu.RUnlock()
+	factory, exists := cr.factories[factoryName]
+	return factory, exists
+}
+
+func (cr *CollectorRegistry) CreateCollector(factoryName, collectorType string) (interfaces.MetricCollector, error) {
+	cr.mu.RLock()
+	factory, exists := cr.factories[factoryName]
+	cr.mu.RUnlock()
+	if !exists {
+		return nil, fmt.Errorf("factory with name %s not found", factoryName)
+	}
+	return factory.CreateCollector(collectorType)
+}
