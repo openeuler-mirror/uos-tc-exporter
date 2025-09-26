@@ -3,26 +3,11 @@
 
 package config
 
+import "time"
+
 type ManagerConfig struct {
-	Collectors map[string]*CollectorConfig
-}
-
-// NewManagerConfig 创建管理器配置
-func NewManagerConfig() *ManagerConfig {
-	return &ManagerConfig{
-		Collectors: make(map[string]*CollectorConfig),
-	}
-}
-
-// GetCollectorConfig 获取收集器配置
-func (mc *ManagerConfig) GetCollectorConfig(name string) *CollectorConfig {
-	if cfg, exists := mc.Collectors[name]; exists {
-		return cfg
-	}
-	return nil
-}
-
-// SetCollectorConfig 设置收集器配置
-func (mc *ManagerConfig) SetCollectorConfig(name string, cfg *CollectorConfig) {
-	mc.Collectors[name] = cfg
+	PerformanceMonitoring bool          `yaml:"performance_monitoring"`
+	CollectionInterval    time.Duration `yaml:"collection_interval"`
+	StatsRetention        time.Duration `yaml:"stats_retention"`
+	EnableBusinessMetrics bool          `yaml:"enable_business_metrics"`
 }

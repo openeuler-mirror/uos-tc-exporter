@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/factories"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/registry"
 	"github.com/sirupsen/logrus"
 )
@@ -15,7 +16,7 @@ import (
 type ManagerV2 struct {
 	mu        sync.RWMutex
 	registry  *registry.CollectorRegistry
-	factories map[string]*registry.CollectorFactory
+	factories map[string]registry.CollectorFactory
 	config    *config.ManagerConfig
 	stats     *CollectionStats
 	logger    *logrus.Logger
@@ -33,4 +34,60 @@ type CollectionStats struct {
 	LastCollectionTime    time.Time
 	LastErrorTime         time.Time
 	LastError             error
+}
+
+func NewManagerV2(cfg *config.ManagerConfig, logger *logrus.Logger) *ManagerV2 {
+	defaultCfg := config.ManagerConfig{
+		PerformanceMonitoring: true,
+		CollectionInterval:    30 * time.Second,
+		StatsRetention:        24 * time.Hour,
+		EnableBusinessMetrics: true,
+	}
+	if cfg == nil {
+		cfg = &defaultCfg
+	}
+	if logger == nil {
+		logger = logrus.New()
+	}
+	m := &ManagerV2{
+		registry:  registry.NewCollectorRegistry(),
+		factories: make(map[string]registry.CollectorFactory),
+		config:    cfg,
+		stats:     &CollectionStats{},
+		logger:    logger,
+	}
+	// Additional initialization logic can be added here
+	m.initializeFactories()
+	m.registerCollectors()
+	return m
+}
+
+func (m *ManagerV2) initializeFactories() {
+	// Initialize and register different factories
+	m.logger.Info("Initializing Qdisc Factory")
+	qdiscFactory := factories.NewQdiscFactory()
+	m.factories["qdisc"] = qdiscFactory
+	m.registry.RegisterFactory("qdisc", qdiscFactory)
+	// Add other factories as needed
+}
+
+func (m *ManagerV2) registerCollectors() {
+	// 注册 qdisc 收集器
+	qdiscTypes := []string{"codel", "cbq", "htb", "fq", "fq_codel", "choke", "pie", "red", "sfb", "sfq", "hfsc"}
+	for _, qdiscType := range qdiscTypes {
+		if collector, err := m.registry.CreateCollector("qdisc", qdiscType); err == nil {
+			m.registry.Register(collector)
+		} else {
+			m.logger.Warnf("Failed to create qdisc collector %s: %v", qdiscType, err)
+		}
+	}
+}
+
+func (m *ManagerV2) GetStats() CollectionStats {
+	m.stats.mu.RLock()
+	defer m.stats.mu.RUnlock()
+	return *m.stats
+}
+func (m *ManagerV2) Shutdown() {
+	m.logger.Info("Shutting down ManagerV2")
 }

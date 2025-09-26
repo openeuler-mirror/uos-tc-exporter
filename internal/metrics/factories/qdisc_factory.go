@@ -39,7 +39,7 @@ func (qf *QdiscFactory) GetSupportedTypes() []string {
 	}
 }
 
-func (qf *QdiscFactory) CreateCollector(qdiscType string) (interfaces.QdiscCollector, error) {
+func (qf *QdiscFactory) CreateCollector(qdiscType string) (interfaces.MetricCollector, error) {
 	cfg, exists := qf.GetConfig(qdiscType)
 	if !exists {
 		cfg := config.NewCollectorConfig()
