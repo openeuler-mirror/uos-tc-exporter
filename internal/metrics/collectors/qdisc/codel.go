@@ -43,6 +43,19 @@ func NewCodelCollector(cfg config.CollectorConfig, logger *logrus.Logger) *Codel
 		QdiscBase: base,
 	}
 	collector.initializeMetrics(&cfg)
+	// Wire hooks so that base dispatch calls concrete implementations
+	collector.SetQdiscHooks(
+		func(qdisc any) bool {
+			tcObj, ok := qdisc.(*tc.Object)
+			if !ok {
+				return false
+			}
+			return collector.ValidateQdisc(tcObj)
+		},
+		func(ch chan<- prometheus.Metric, ns, deviceName string, qdisc any) {
+			collector.CollectQdiscMetrics(ch, ns, deviceName, qdisc)
+		},
+	)
 	return collector
 }
 
