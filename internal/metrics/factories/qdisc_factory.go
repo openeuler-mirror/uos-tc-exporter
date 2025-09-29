@@ -4,6 +4,8 @@
 package factories
 
 import (
+	"errors"
+
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/collectors/qdisc"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
@@ -51,6 +53,6 @@ func (qf *QdiscFactory) CreateCollector(qdiscType string) (interfaces.MetricColl
 	case "codel":
 		return qdisc.NewCodelCollector(*cfg, logger), nil
 	default:
-		return nil, nil
+		return nil, errors.New("unsupported qdisc type: " + qdiscType)
 	}
 }

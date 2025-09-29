@@ -78,7 +78,8 @@ func (m *ManagerV2) registerCollectors() {
 	// 注册 qdisc 收集器
 	qdiscTypes := []string{"codel", "cbq", "htb", "fq", "fq_codel", "choke", "pie", "red", "sfb", "sfq", "hfsc"}
 	for _, qdiscType := range qdiscTypes {
-		if collector, err := m.registry.CreateCollector("qdisc", qdiscType); err == nil {
+		collector, err := m.registry.CreateCollector("qdisc", qdiscType)
+		if err == nil {
 			m.registry.Register(collector)
 		} else {
 			m.logger.Warnf("Failed to create qdisc collector %s: %v", qdiscType, err)
