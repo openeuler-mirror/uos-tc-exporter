@@ -40,9 +40,10 @@ func (qf *QdiscFactory) GetSupportedTypes() []string {
 }
 
 func (qf *QdiscFactory) CreateCollector(qdiscType string) (interfaces.MetricCollector, error) {
+	var cfg *config.CollectorConfig
 	cfg, exists := qf.GetConfig(qdiscType)
 	if !exists {
-		cfg := config.NewCollectorConfig()
+		cfg = config.NewCollectorConfig()
 		qf.AddConfig(qdiscType, cfg)
 	}
 	logger := logrus.New()
