@@ -24,6 +24,9 @@ type CollectorBase struct {
 	metrics     map[string]*prometheus.Desc
 	lastError   error
 	lastCollect time.Time
+	// doCollect is a hook set by concrete collectors to perform actual collection.
+	// If nil, Collect will do nothing.
+	doCollect func(ch chan<- prometheus.Metric)
 }
 
 func NewCollectorBase(id, name, description string, config interfaces.CollectorConfig, logger *logrus.Logger) *CollectorBase {
@@ -49,7 +52,9 @@ func (cb *CollectorBase) Collect(ch chan<- prometheus.Metric) {
 		cb.lastCollect = time.Now()
 		cb.mu.Unlock()
 	}()
-	cb.CollectMetrics(ch)
+	if cb.doCollect != nil {
+		cb.doCollect(ch)
+	}
 }
 func (cb *CollectorBase) ID() string {
 	return cb.id
@@ -88,6 +93,13 @@ func (cb *CollectorBase) SetConfig(config any) error {
 // CollectMetrics 子类需要实现的收集逻辑
 func (cb *CollectorBase) CollectMetrics(ch chan<- prometheus.Metric) {
 	// 默认实现为空，子类需要重写
+}
+
+// SetCollectFunc 由子类调用以注入实际的采集函数
+func (cb *CollectorBase) SetCollectFunc(fn func(ch chan<- prometheus.Metric)) {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+	cb.doCollect = fn
 }
 
 // AddMetric 添加指标描述符

@@ -17,17 +17,25 @@ type QdiscBase struct {
 	QdiscType        string
 	SupportedMetrics []string
 	LabelNames       []string
+	// Hooks for concrete collectors
+	validateQdisc       func(qdisc any) bool
+	collectQdiscMetrics func(ch chan<- prometheus.Metric, ns, deviceName string, qdisc any)
 }
 
 // NewQdiscBase 创建 qdisc 基础实例
 func NewQdiscBase(qdiscType, name, description string, config interfaces.CollectorConfig, logger *logrus.Logger) *QdiscBase {
 	base := NewCollectorBase("qdisc_"+qdiscType, name, description, config, logger)
-	return &QdiscBase{
+	qb := &QdiscBase{
 		CollectorBase:    base,
 		QdiscType:        qdiscType,
 		SupportedMetrics: make([]string, 0),
 		LabelNames:       []string{"namespace", "device", "kind"},
 	}
+	// 将实际的收集逻辑注入到 CollectorBase，确保通过接口调用时能触发子类实现
+	qb.SetCollectFunc(func(ch chan<- prometheus.Metric) {
+		qb.CollectMetrics(ch)
+	})
+	return qb
 }
 
 // CollectMetrics 实现 qdisc 收集逻辑
@@ -76,11 +84,20 @@ func (qb *QdiscBase) collectForDevice(ch chan<- prometheus.Metric, ns string, de
 	}
 
 	for _, qdisc := range qdiscs {
-		if !qb.ValidateQdisc(&qdisc) {
+		// Prefer concrete hook if provided
+		if qb.validateQdisc != nil {
+			if !qb.validateQdisc(&qdisc) {
+				continue
+			}
+		} else if !qb.ValidateQdisc(&qdisc) {
 			continue
 		}
 
-		qb.CollectQdiscMetrics(ch, ns, deviceName, &qdisc)
+		if qb.collectQdiscMetrics != nil {
+			qb.collectQdiscMetrics(ch, ns, deviceName, &qdisc)
+		} else {
+			qb.CollectQdiscMetrics(ch, ns, deviceName, &qdisc)
+		}
 	}
 }
 
@@ -115,4 +132,13 @@ func (qb *QdiscBase) GetSupportedMetrics() []string {
 // AddSupportedMetric 添加支持的指标
 func (qb *QdiscBase) AddSupportedMetric(metricName string) {
 	qb.SupportedMetrics = append(qb.SupportedMetrics, metricName)
+}
+
+// SetQdiscHooks injects concrete validation and collection logic
+func (qb *QdiscBase) SetQdiscHooks(
+	validate func(qdisc any) bool,
+	collect func(ch chan<- prometheus.Metric, ns, deviceName string, qdisc any),
+) {
+	qb.validateQdisc = validate
+	qb.collectQdiscMetrics = collect
 }
