@@ -4,12 +4,15 @@
 package metrics
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/factories"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/registry"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -90,4 +93,46 @@ func (m *ManagerV2) GetStats() CollectionStats {
 }
 func (m *ManagerV2) Shutdown() {
 	m.logger.Info("Shutting down ManagerV2")
+}
+
+// CollectAll 收集所有指标
+func (m *ManagerV2) CollectAll(ch chan<- prometheus.Metric) {
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start)
+		// m.stats.RecordCollection(duration, true, nil)
+		fmt.Printf("Collection took %v\n", duration)
+	}()
+	collectors := m.registry.GetEnableCollectors()
+	for _, collector := range collectors {
+		collector.Collect(ch)
+	}
+
+}
+
+// GetCollector 获取收集器
+func (m *ManagerV2) GetCollector(id string) (interfaces.MetricCollector, bool) {
+	return m.registry.GetCollector(id)
+}
+
+// EnableCollector 启用收集器
+func (m *ManagerV2) EnableCollector(id string) error {
+	collector, exists := m.registry.GetCollector(id)
+	if !exists {
+		return fmt.Errorf("collector %s not found", id)
+	}
+
+	collector.SetEnabled(true)
+	return nil
+}
+
+// DisableCollector 禁用收集器
+func (m *ManagerV2) DisableCollector(id string) error {
+	collector, exists := m.registry.GetCollector(id)
+	if !exists {
+		return fmt.Errorf("collector %s not found", id)
+	}
+
+	collector.SetEnabled(false)
+	return nil
 }
