@@ -76,7 +76,7 @@ func (m *ManagerV2) initializeFactories() {
 
 func (m *ManagerV2) registerCollectors() {
 	// 注册 qdisc 收集器
-	qdiscTypes := []string{"codel", "cbq", "htb", "fq", "fq_codel", "choke", "pie", "red", "sfb", "sfq", "hfsc"}
+	qdiscTypes := []string{"codel", "cbq", "htb", "fq", "fq_codel", "choke", "pie", "red", "sfb", "sfq", "hfsc", "qdisc"}
 	for _, qdiscType := range qdiscTypes {
 		collector, err := m.registry.CreateCollector("qdisc", qdiscType)
 		if err == nil {
