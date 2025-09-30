@@ -60,6 +60,7 @@ func (qb *QdiscBase) CollectMetrics(ch chan<- prometheus.Metric) {
 
 // collectForNamespace 收集指定命名空间的指标
 func (qb *QdiscBase) collectForNamespace(ch chan<- prometheus.Metric, ns string) {
+	qb.Logger.Debugf("Start collect for %s", ns)
 	devices, err := tc.GetInterfaceInNetNS(ns)
 	if err != nil {
 		qb.Logger.Warnf("Get interface in netns %s failed: %v", ns, err)
@@ -73,6 +74,7 @@ func (qb *QdiscBase) collectForNamespace(ch chan<- prometheus.Metric, ns string)
 
 // collectForDevice 收集指定设备的指标
 func (qb *QdiscBase) collectForDevice(ch chan<- prometheus.Metric, ns string, device rtnetlink.LinkMessage) {
+	qb.Logger.Debugf("Start collect for device: %s", device.Attributes.Name)
 	// 获取设备索引
 	deviceIndex, deviceName := qb.extractDeviceInfo(device)
 
@@ -92,7 +94,7 @@ func (qb *QdiscBase) collectForDevice(ch chan<- prometheus.Metric, ns string, de
 		} else if !qb.ValidateQdisc(&qdisc) {
 			continue
 		}
-
+		qb.Logger.Debugln("Start to call qdisc collect")
 		if qb.collectQdiscMetrics != nil {
 			qb.collectQdiscMetrics(ch, ns, deviceName, &qdisc)
 		} else {

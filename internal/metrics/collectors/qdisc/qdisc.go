@@ -4,8 +4,6 @@
 package qdisc
 
 import (
-	"fmt"
-
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/base"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
@@ -70,7 +68,7 @@ func (c *QdiscCollector) initializeMetrics(cfg *config.CollectorConfig) {
 
 // ValidateQdisc 验证 qdisc 是否支持
 func (c *QdiscCollector) ValidateQdisc(qdisc *tc.Object) bool {
-	return qdisc.Kind == ""
+	return true
 }
 
 // CollectQdiscMetrics 收集 qdisc 指标
@@ -86,7 +84,6 @@ func (c *QdiscCollector) CollectQdiscMetrics(ch chan<- prometheus.Metric, ns, de
 	}
 
 	attrs := tcQdisc.Stats
-	fmt.Println("wd1")
 	// 根据配置收集指标
 	for _, metricName := range c.GetSupportedMetrics() {
 		var value float64
