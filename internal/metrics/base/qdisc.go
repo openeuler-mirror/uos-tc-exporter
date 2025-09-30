@@ -41,7 +41,6 @@ func NewQdiscBase(qdiscType, name, description string, config interfaces.Collect
 // CollectMetrics 实现 qdisc 收集逻辑
 func (qb *QdiscBase) CollectMetrics(ch chan<- prometheus.Metric) {
 	qb.Logger.Info("Start collecting qdisc metrics")
-
 	nsList, err := tc.GetNetNameSpaceList()
 	if err != nil {
 		qb.Logger.Warnf("Get net namespace list failed: %v", err)
@@ -85,6 +84,7 @@ func (qb *QdiscBase) collectForDevice(ch chan<- prometheus.Metric, ns string, de
 
 	for _, qdisc := range qdiscs {
 		// Prefer concrete hook if provided
+
 		if qb.validateQdisc != nil {
 			if !qb.validateQdisc(&qdisc) {
 				continue
