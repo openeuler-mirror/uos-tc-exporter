@@ -52,9 +52,7 @@ func (cb *CollectorBase) Collect(ch chan<- prometheus.Metric) {
 		cb.lastCollect = time.Now()
 		cb.mu.Unlock()
 	}()
-	if cb.doCollect != nil {
-		cb.doCollect(ch)
-	}
+	cb.CollectMetrics(ch)
 }
 func (cb *CollectorBase) ID() string {
 	return cb.id
@@ -92,7 +90,9 @@ func (cb *CollectorBase) SetConfig(config any) error {
 
 // CollectMetrics 子类需要实现的收集逻辑
 func (cb *CollectorBase) CollectMetrics(ch chan<- prometheus.Metric) {
-	// 默认实现为空，子类需要重写
+	if cb.doCollect != nil {
+		cb.doCollect(ch)
+	}
 }
 
 // SetCollectFunc 由子类调用以注入实际的采集函数
