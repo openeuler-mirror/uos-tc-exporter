@@ -54,78 +54,73 @@ func NewConfigManager(configPath string) (*ConfigManager, error) {
 	return cm, nil
 }
 
+// loadConfigFromFile 从文件加载配置（内部辅助方法）
+func (cm *ConfigManager) loadConfigFromFile() (*Config, error) {
+	// 检查文件是否存在
+	if !cm.fileExists() {
+		return nil, errors.New("config file not found")
+	}
+
+	// 读取配置文件
+	content, err := os.ReadFile(cm.configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	// 解析YAML
+	var newConfig Config
+	if err := yaml.Unmarshal(content, &newConfig); err != nil {
+		return nil, fmt.Errorf("failed to parse config file: %w", err)
+	}
+
+	// 验证配置
+	if err := newConfig.Validate(); err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
+	}
+
+	return &newConfig, nil
+}
+
 // LoadConfig 加载配置文件
 func (cm *ConfigManager) LoadConfig() error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	// 检查文件是否存在
-	if !cm.fileExists() {
-		logrus.Warnf("Config file %s not found, using default config", cm.configPath)
-		return errors.New("config file not found")
-	}
-	// 读取配置文件
-	content, err := os.ReadFile(cm.configPath)
+	newConfig, err := cm.loadConfigFromFile()
 	if err != nil {
-		return fmt.Errorf("failed to read config file %s: %w", cm.configPath, err)
-	}
-
-	// 解析YAML
-	var newConfig Config
-	if err := yaml.Unmarshal(content, &newConfig); err != nil {
-		return fmt.Errorf("failed to parse config file %s: %w", cm.configPath, err)
-	}
-
-	// 验证配置
-	if err := newConfig.Validate(); err != nil {
-		return fmt.Errorf("config validation failed: %w", err)
+		logrus.Warnf("Config file %s not found, using default config: %v", cm.configPath, err)
+		return err
 	}
 
 	// 应用配置
-	cm.config = &newConfig
-
-	logrus.Debugf("Config : address=%s, port=%d, metricsPath=%s",
-		cm.config.Address, cm.config.Port, cm.config.MetricsPath)
+	cm.config = newConfig
+	logrus.Debugf("Config loaded: address=%s, port=%d, metricsPath=%s", cm.config.Address, cm.config.Port, cm.config.MetricsPath)
 	return nil
 }
 
+// Reload 重新加载配置文件
 func (cm *ConfigManager) Reload() error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	// 检查文件是否存在
-	if !cm.fileExists() {
-		logrus.Warnf("Config file %s not found, using default config", cm.configPath)
-		return errors.New("config file not found")
-	}
-	// 读取配置文件
-	content, err := os.ReadFile(cm.configPath)
+	newConfig, err := cm.loadConfigFromFile()
 	if err != nil {
-		return fmt.Errorf("failed to read config file %s: %w", cm.configPath, err)
+		logrus.Warnf("Config file %s not found during reload: %v", cm.configPath, err)
+		return err
 	}
 
-	// 解析YAML
-	var newConfig Config
-	if err := yaml.Unmarshal(content, &newConfig); err != nil {
-		return fmt.Errorf("failed to parse config file %s: %w", cm.configPath, err)
-	}
-
-	// 验证配置
-	if err := newConfig.Validate(); err != nil {
-		return fmt.Errorf("config validation failed: %w", err)
-	}
+	// 保存旧配置用于回滚
+	oldConfig := cm.config
 
 	// 应用新配置
-	oldConfig := cm.config
-	cm.config = &newConfig
+	cm.config = newConfig
 	cm.lastReload = time.Now()
 	cm.reloadCount++
 
 	logrus.Infof("Config reloaded successfully from %s (reload count: %d)", cm.configPath, cm.reloadCount)
-	logrus.Debugf("Config changed: address=%s, port=%d, metricsPath=%s",
-		cm.config.Address, cm.config.Port, cm.config.MetricsPath)
+	logrus.Debugf("Config reloaded: address=%s, port=%d, metricsPath=%s", cm.config.Address, cm.config.Port, cm.config.MetricsPath)
 
-	// 调用重载回调
+	// 调用重载回调（如果设置）
 	if cm.onReload != nil {
 		if err := cm.onReload(cm.config); err != nil {
 			logrus.Errorf("Config reload callback failed: %v", err)
@@ -190,6 +185,7 @@ func (cm *ConfigManager) StopWatching() error {
 // watchLoop 文件监控循环
 func (cm *ConfigManager) watchLoop(ctx context.Context) {
 	var reloadTimer *time.Timer
+	configPathClean := filepath.Clean(cm.configPath)
 
 	for {
 		select {
@@ -203,18 +199,18 @@ func (cm *ConfigManager) watchLoop(ctx context.Context) {
 			}
 
 			// 只处理配置文件的变化
-			if filepath.Clean(event.Name) == filepath.Clean(cm.configPath) {
+			if filepath.Clean(event.Name) == configPathClean {
 				if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
 					// 防抖处理：延迟重载
-					// 保证在配置文件频繁变化时，只进行一次重载
 					if reloadTimer != nil {
 						reloadTimer.Stop()
 					}
 					reloadTimer = time.AfterFunc(cm.reloadDelay, func() {
 						select {
-						// 非阻塞发送重载信号
 						case cm.reloadChan <- struct{}{}:
+							// 成功发送重载信号
 						default:
+							// 通道已满，跳过本次重载
 						}
 					})
 				}
