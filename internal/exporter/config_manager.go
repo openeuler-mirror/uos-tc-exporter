@@ -24,7 +24,7 @@ type ConfigManager struct {
 	watcher     *fsnotify.Watcher
 	reloadChan  chan struct{}
 	stopChan    chan struct{}
-	mutex       sync.RWMutex
+	mu          sync.RWMutex
 	reloadDelay time.Duration
 	onReload    func(*Config) error
 	lastReload  time.Time
@@ -56,8 +56,42 @@ func NewConfigManager(configPath string) (*ConfigManager, error) {
 
 // LoadConfig 加载配置文件
 func (cm *ConfigManager) LoadConfig() error {
-	cm.mutex.Lock()
-	defer cm.mutex.Unlock()
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	// 检查文件是否存在
+	if !cm.fileExists() {
+		logrus.Warnf("Config file %s not found, using default config", cm.configPath)
+		return errors.New("config file not found")
+	}
+	// 读取配置文件
+	content, err := os.ReadFile(cm.configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file %s: %w", cm.configPath, err)
+	}
+
+	// 解析YAML
+	var newConfig Config
+	if err := yaml.Unmarshal(content, &newConfig); err != nil {
+		return fmt.Errorf("failed to parse config file %s: %w", cm.configPath, err)
+	}
+
+	// 验证配置
+	if err := newConfig.Validate(); err != nil {
+		return fmt.Errorf("config validation failed: %w", err)
+	}
+
+	// 应用配置
+	cm.config = &newConfig
+
+	logrus.Debugf("Config : address=%s, port=%d, metricsPath=%s",
+		cm.config.Address, cm.config.Port, cm.config.MetricsPath)
+	return nil
+}
+
+func (cm *ConfigManager) Reload() error {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
 
 	// 检查文件是否存在
 	if !cm.fileExists() {
@@ -106,8 +140,8 @@ func (cm *ConfigManager) LoadConfig() error {
 
 // GetConfig 获取当前配置的副本
 func (cm *ConfigManager) GetConfig() Config {
-	cm.mutex.RLock()
-	defer cm.mutex.RUnlock()
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
 
 	if cm.config == nil {
 		return DefaultConfig
@@ -117,15 +151,15 @@ func (cm *ConfigManager) GetConfig() Config {
 
 // GetConfigPtr 获取当前配置的指针（用于内部使用）
 func (cm *ConfigManager) GetConfigPtr() *Config {
-	cm.mutex.RLock()
-	defer cm.mutex.RUnlock()
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
 	return cm.config
 }
 
 // SetReloadCallback 设置配置重载回调函数
 func (cm *ConfigManager) SetReloadCallback(callback func(*Config) error) {
-	cm.mutex.Lock()
-	defer cm.mutex.Unlock()
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
 	cm.onReload = callback
 }
 
@@ -172,11 +206,13 @@ func (cm *ConfigManager) watchLoop(ctx context.Context) {
 			if filepath.Clean(event.Name) == filepath.Clean(cm.configPath) {
 				if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
 					// 防抖处理：延迟重载
+					// 保证在配置文件频繁变化时，只进行一次重载
 					if reloadTimer != nil {
 						reloadTimer.Stop()
 					}
 					reloadTimer = time.AfterFunc(cm.reloadDelay, func() {
 						select {
+						// 非阻塞发送重载信号
 						case cm.reloadChan <- struct{}{}:
 						default:
 						}
@@ -189,7 +225,8 @@ func (cm *ConfigManager) watchLoop(ctx context.Context) {
 			}
 			logrus.Errorf("Config file watcher error: %v", err)
 		case <-cm.reloadChan:
-			if err := cm.LoadConfig(); err != nil {
+			// 执行配置重载
+			if err := cm.Reload(); err != nil {
 				logrus.Errorf("Failed to reload config: %v", err)
 			}
 		}
@@ -203,11 +240,11 @@ func (cm *ConfigManager) fileExists() bool {
 }
 
 // GetStats 获取配置管理器统计信息
-func (cm *ConfigManager) GetStats() map[string]interface{} {
-	cm.mutex.RLock()
-	defer cm.mutex.RUnlock()
+func (cm *ConfigManager) GetStats() map[string]any {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
 
-	return map[string]interface{}{
+	return map[string]any{
 		"config_path":  cm.configPath,
 		"last_reload":  cm.lastReload,
 		"reload_count": cm.reloadCount,
