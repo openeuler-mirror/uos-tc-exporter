@@ -34,9 +34,9 @@ type ChokeCollector struct {
 	*base.QdiscBase
 }
 
-func NewChokeCollector(cfg config.CollectorConfig, logger *logrus.Logger) *CodelCollector {
+func NewChokeCollector(cfg config.CollectorConfig, logger *logrus.Logger) *ChokeCollector {
 	base := base.NewQdiscBase("choke", "qdisc_choke", "Choke qdisc metrics", &cfg, logger)
-	collector := &CodelCollector{
+	collector := &ChokeCollector{
 		QdiscBase: base,
 	}
 	collector.initializeMetrics(&cfg)

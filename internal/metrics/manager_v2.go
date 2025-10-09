@@ -17,7 +17,6 @@ import (
 )
 
 type ManagerV2 struct {
-	mu        sync.RWMutex
 	registry  *registry.CollectorRegistry
 	factories map[string]registry.CollectorFactory
 	config    *config.ManagerConfig
@@ -87,10 +86,11 @@ func (m *ManagerV2) registerCollectors() {
 	}
 }
 
-func (m *ManagerV2) GetStats() CollectionStats {
+func (m *ManagerV2) GetStats() *CollectionStats {
 	m.stats.mu.RLock()
 	defer m.stats.mu.RUnlock()
-	return *m.stats
+	// fix: returning a copy of stats can lead to issues with the embedded RWMutex
+	return m.stats
 }
 func (m *ManagerV2) Shutdown() {
 	m.logger.Info("Shutting down ManagerV2")
