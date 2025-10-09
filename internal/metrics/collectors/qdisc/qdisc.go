@@ -14,8 +14,15 @@ import (
 
 func init() {
 	mc := map[string]config.MetricConfig{
-		"bytes_total":   *config.NewMetricConfig("bytes_total", "QdiscPie byte counter", "qdisc"),
-		"packets_total": *config.NewMetricConfig("packets_total", "QdiscPie packet counter", "qdisc"),
+		"bytes_total":      *config.NewMetricConfig("bytes_total", "QdiscPie byte counter", "qdisc"),
+		"packets_total":    *config.NewMetricConfig("packets_total", "QdiscPie packet counter", "qdisc"),
+		"drops_total":      *config.NewMetricConfig("drops_total", "QdiscPie queue drops", "qdisc"),
+		"overlimits_total": *config.NewMetricConfig("overlimits", "QdiscPie queue overlimits", "qdisc"),
+		"bps":              *config.NewMetricConfig("bps", "QdiscPie bytes per second", "qdisc"),
+		"pps":              *config.NewMetricConfig("pps", "QdiscPie packets per second", "qdisc"),
+		"qlen":             *config.NewMetricConfig("qlen", "QdiscPie current queue length", "qdisc"),
+		"backlog":          *config.NewMetricConfig("backlog", "QdiscPie current backlog in bytes", "qdisc"),
+		"requeues_total":   *config.NewMetricConfig("requeues_total", "QdiscPie number of requeues", "qdisc"),
 	}
 	qc := NewQdiscCollector(config.CollectorConfig{
 		Enabled:    true,
@@ -32,7 +39,7 @@ type QdiscCollector struct {
 }
 
 func NewQdiscCollector(cfg config.CollectorConfig, logger *logrus.Logger) *QdiscCollector {
-	base := base.NewQdiscBase("codel", "qdisc_codel", "Codel qdisc metrics", &cfg, logger)
+	base := base.NewQdiscBase("qdisc", "qdisc", "disc metrics", &cfg, logger)
 	collector := &QdiscCollector{
 		QdiscBase: base,
 	}
@@ -92,6 +99,20 @@ func (c *QdiscCollector) CollectQdiscMetrics(ch chan<- prometheus.Metric, ns, de
 			value = float64(attrs.Bytes)
 		case "packets_total":
 			value = float64(attrs.Packets)
+		case "drops_total":
+			value = float64(attrs.Drops)
+		case "overlimits_total":
+			value = float64(attrs.Overlimits)
+		case "bps":
+			value = float64(attrs.Bps)
+		case "pps":
+			value = float64(attrs.Pps)
+		case "qlen":
+			value = float64(attrs.Qlen)
+		case "backlog":
+			value = float64(attrs.Backlog)
+		// case "requeues_total":
+		// 	value = float64(attrs.Requeues)
 		default:
 			c.Logger.Warnf("Unsupported metric %s for codel qdisc on device %s in netns %s", metricName, deviceName, ns)
 			continue
