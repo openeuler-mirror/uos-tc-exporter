@@ -24,7 +24,7 @@ func Run(name string, version string) error {
 			"error":          customErr.Error(),
 			"server_name":    name,
 			"server_version": version,
-		}).Error("Server setup failed")
+		}).Errorln("Server setup failed")
 		return customErr
 	}
 	go func() {
