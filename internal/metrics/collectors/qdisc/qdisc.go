@@ -111,10 +111,15 @@ func (c *QdiscCollector) CollectQdiscMetrics(ch chan<- prometheus.Metric, ns, de
 			value = float64(attrs.Qlen)
 		case "backlog":
 			value = float64(attrs.Backlog)
-		// case "requeues_total":
-		// 	value = float64(attrs.Requeues)
+		case "requeues_total":
+			stats2 := tcQdisc.Stats2
+			if stats2 == nil {
+				value = float64(stats2.Requeues)
+			} else {
+				continue
+			}
 		default:
-			c.Logger.Warnf("Unsupported metric %s for codel qdisc on device %s in netns %s", metricName, deviceName, ns)
+			c.Logger.Warnf("Unsupported metric %s for qdisc on device %s in netns %s", metricName, deviceName, ns)
 			continue
 		}
 		desc, ok := c.GetMetric(metricName)

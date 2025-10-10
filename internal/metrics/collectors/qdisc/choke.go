@@ -71,7 +71,7 @@ func (c *ChokeCollector) initializeMetrics(cfg *config.CollectorConfig) {
 
 // ValidateQdisc 验证 qdisc 是否支持
 func (c *ChokeCollector) ValidateQdisc(qdisc *tc.Object) bool {
-	return true
+	return qdisc.Kind == "choke"
 }
 
 // CollectQdiscMetrics 收集 qdisc 指标
@@ -82,11 +82,11 @@ func (c *ChokeCollector) CollectQdiscMetrics(ch chan<- prometheus.Metric, ns, de
 		return
 	}
 	if tcQdisc.XStats == nil {
-		c.Logger.Warnf("No extended stats for codel qdisc on device %s in netns %s", deviceName, ns)
+		c.Logger.Debugf("No extended stats for choke qdisc on device %s in netns %s", deviceName, ns)
 		return
 	}
 	if tcQdisc.XStats.Choke == nil {
-		c.Logger.Warnf("No codel stats for codel qdisc on device %s in netns %s", deviceName, ns)
+		c.Logger.Debugf("No choke stats for choke qdisc on device %s in netns %s", deviceName, ns)
 		return
 	}
 	attrs := tcQdisc.XStats.Choke

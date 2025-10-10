@@ -150,7 +150,7 @@ func (c *CodelCollector) CollectQdiscMetrics(ch chan<- prometheus.Metric, ns, de
 		return
 	}
 	if tcQdisc.XStats.Codel == nil {
-		c.Logger.Warnf("No codel stats for codel qdisc on device %s in netns %s", deviceName, ns)
+		c.Logger.Debugf("No codel stats for codel qdisc on device %s in netns %s", deviceName, ns)
 		return
 	}
 	attrs := tcQdisc.XStats.Codel
