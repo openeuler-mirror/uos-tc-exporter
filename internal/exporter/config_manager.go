@@ -88,7 +88,7 @@ func (cm *ConfigManager) LoadConfig() error {
 
 	newConfig, err := cm.loadConfigFromFile()
 	if err != nil {
-		logrus.Warnf("Config file %s not found, using default config: %v", cm.configPath, err)
+		logrus.Warnf("Config file %s not found", cm.configPath)
 		return err
 	}
 
