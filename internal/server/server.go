@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/utils"
 	"github.com/alecthomas/kingpin"
@@ -30,7 +31,7 @@ func init() {
 type Server struct {
 	Name       string
 	Version    string
-	configMgr  *ConfigManager
+	configMgr  *exporter.ConfigManager
 	metricsMgr *MetricsManager
 	httpServer *HttpServer
 	ExitSignal chan struct{}
@@ -66,7 +67,11 @@ func (s *Server) SetUp() error {
 	}
 
 	// 初始化配置管理器
-	s.configMgr = NewConfigManager()
+	// s.configMgr = NewConfigManager()
+	s.configMgr, err = exporter.NewConfigManager(*exporter.Configfile)
+	if err != nil {
+		return err
+	}
 	err = s.configMgr.LoadConfig()
 	if err != nil {
 		logrus.Errorf("Loading config file failed: %v", err)
@@ -94,7 +99,7 @@ func (s *Server) SetUp() error {
 	}
 
 	// 启动配置监控
-	if err := s.configMgr.StartWatching(); err != nil {
+	if err := s.configMgr.StartWatching(context.TODO()); err != nil {
 		logrus.Warnf("Failed to start config watching: %v, config hot reload will be disabled", err)
 	} else {
 		logrus.Info("Config hot reload enabled")
