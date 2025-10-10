@@ -75,7 +75,8 @@ func (s *Server) SetUp() error {
 	err = s.configMgr.LoadConfig()
 	if err != nil {
 		logrus.Errorf("Loading config file failed: %v", err)
-		return err
+		logrus.Info("Use default config")
+		// return err
 	}
 
 	// 设置日志
