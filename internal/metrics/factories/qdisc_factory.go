@@ -48,7 +48,7 @@ func (qf *QdiscFactory) CreateCollector(qdiscType string) (interfaces.MetricColl
 		cfg = config.NewCollectorConfig()
 		qf.AddConfig(qdiscType, cfg)
 	}
-	logger := logrus.New()
+	logger := logrus.StandardLogger()
 	switch qdiscType {
 	case "codel":
 		return qdisc.NewCodelCollector(*cfg, logger), nil
