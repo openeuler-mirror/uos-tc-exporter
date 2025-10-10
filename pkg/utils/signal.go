@@ -15,7 +15,7 @@ import (
 func HandleSignals(function func()) {
 	var callback sync.Once
 	sigc := make(chan os.Signal, 1)
-	defer close(sigc)
+	// defer close(sigc)
 	signal.Notify(sigc,
 		syscall.SIGINT,
 		syscall.SIGTERM)
