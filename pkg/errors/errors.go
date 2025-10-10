@@ -29,10 +29,18 @@ const (
 	ErrCodeRateLimit  ErrorCode = 3001
 	ErrCodeAuth       ErrorCode = 3002
 
-	// 业务逻辑错误码 (4000-4999)
-	ErrCodeBusiness    ErrorCode = 4000
-	ErrCodeMetrics     ErrorCode = 4001
-	ErrCodeLandingPage ErrorCode = 4002
+// 业务逻辑错误码 (4000-4999)
+ErrCodeBusiness        ErrorCode = 4000
+ErrCodeMetrics         ErrorCode = 4001
+ErrCodeLandingPage     ErrorCode = 4002
+ErrCodeMetricsCollect  ErrorCode = 4003
+ErrCodeConfigValidation ErrorCode = 4004
+ErrCodeNetlinkOperation ErrorCode = 4005
+
+// TC 操作错误码 (5000-5999)
+ErrCodeTCOperation     ErrorCode = 5000
+ErrCodeQdiscOperation ErrorCode = 5001
+ErrCodeClassOperation ErrorCode = 5002
 )
 
 // Error 自定义错误结构
