@@ -19,12 +19,12 @@ func init() {
 		"cbq_overactions": NewCbqConfig("cbq_overactions", "CBQ overactions xstat"),
 		"cbq_undertime":   NewCbqConfig("cbq_undertime", "CBQ undetime xstat"),
 	}
-	code := NewChokeCollector(config.CollectorConfig{
+	code := NewCbqCollector(config.CollectorConfig{
 		Enabled:    true,
 		Timeout:    5,
 		RetryCount: 3,
 		Metrics:    mc},
-		logrus.New(),
+		logrus.StandardLogger(),
 	)
 	exporter.Register(code)
 }

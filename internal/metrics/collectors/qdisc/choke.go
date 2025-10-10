@@ -25,7 +25,7 @@ func init() {
 		Timeout:    5,
 		RetryCount: 3,
 		Metrics:    mc},
-		logrus.New(),
+		logrus.StandardLogger(),
 	)
 	exporter.Register(code)
 }

@@ -29,7 +29,7 @@ func init() {
 		Timeout:    5,
 		RetryCount: 3,
 		Metrics:    mc},
-		logrus.New(),
+		logrus.StandardLogger(),
 	)
 	exporter.Register(qc)
 }
@@ -64,7 +64,7 @@ func (c *QdiscCollector) initializeMetrics(cfg *config.CollectorConfig) {
 	labelNames := c.LabelNames
 	for metricName, metricConfig := range cfg.GetMetrics() {
 		desc := prometheus.NewDesc(
-			"qdisc_qdisc_"+metricName,
+			"qdisc_"+metricName,
 			metricConfig.GetHelp(),
 			labelNames, nil,
 		)

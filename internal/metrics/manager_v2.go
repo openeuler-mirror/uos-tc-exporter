@@ -49,7 +49,7 @@ func NewManagerV2(cfg *config.ManagerConfig, logger *logrus.Logger) *ManagerV2 {
 		cfg = &defaultCfg
 	}
 	if logger == nil {
-		logger = logrus.New()
+		logger = logrus.StandardLogger()
 	}
 	m := &ManagerV2{
 		registry:  registry.NewCollectorRegistry(),
