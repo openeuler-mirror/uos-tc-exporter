@@ -19,7 +19,7 @@ func HandleSignals(function func()) {
 	signal.Notify(sigc,
 		syscall.SIGINT,
 		syscall.SIGTERM)
-
+	defer signal.Stop(sigc)
 	sig := <-sigc
 	logrus.Infof("service received signal: %v", sig)
 	callback.Do(function)
