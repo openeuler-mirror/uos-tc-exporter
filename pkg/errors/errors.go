@@ -158,3 +158,73 @@ func GetErrorContext(err error) map[string]interface{} {
 	}
 	return nil
 }
+
+// WrapWithContext 包装错误并添加上下文
+func WrapWithContext(err error, code ErrorCode, message string, ctx map[string]interface{}) *Error {
+	customErr := Wrap(err, code, message)
+	if customErr == nil {
+		return nil
+	}
+
+	for k, v := range ctx {
+		customErr.WithContext(k, v)
+	}
+	return customErr
+}
+
+// NewWithContext 创建新错误并添加上下文
+func NewWithContext(code ErrorCode, message string, ctx map[string]interface{}) *Error {
+	err := New(code, message)
+	for k, v := range ctx {
+		err.WithContext(k, v)
+	}
+	return err
+}
+
+// IsTemporaryError 检查是否为临时错误（可重试）
+func IsTemporaryError(err error) bool {
+	code := GetErrorCode(err)
+	// 网络错误、限流错误等通常是临时的
+	return code == ErrCodeNetwork || code == ErrCodeRateLimit
+}
+
+// IsPermanentError 检查是否为永久错误（不可重试）
+func IsPermanentError(err error) bool {
+	code := GetErrorCode(err)
+	// 配置错误、权限错误等通常是永久的
+	return code == ErrCodeConfig || code == ErrCodeAuth
+}
+
+// GetErrorSeverity 获取错误严重程度
+func GetErrorSeverity(err error) string {
+	code := GetErrorCode(err)
+	switch {
+	case code >= 1000 && code < 2000:
+		return "critical" // 系统级错误
+	case code >= 2000 && code < 3000:
+		return "high"      // 服务级错误
+	case code >= 3000 && code < 4000:
+		return "medium"    // 中间件错误
+	case code >= 4000 && code < 6000:
+		return "low"       // 业务逻辑错误
+	default:
+		return "unknown"
+	}
+}
+
+// ErrorStack 获取错误堆栈信息
+func ErrorStack(err error) []string {
+	var stack []string
+	current := err
+
+	for current != nil {
+		stack = append(stack, current.Error())
+		if wrapped, ok := current.(interface{ Unwrap() error }); ok {
+			current = wrapped.Unwrap()
+		} else {
+			break
+		}
+	}
+
+	return stack
+}
