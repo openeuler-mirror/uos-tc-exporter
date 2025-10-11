@@ -24,3 +24,12 @@ func (r *TcCollector) Describe(descs chan<- *prometheus.Desc) {
 func (r *TcCollector) Collect(ch chan<- prometheus.Metric) {
 	r.mng.CollectAll(ch)
 }
+
+type CollectorFunc func(ch chan<- prometheus.Metric)
+
+func (f CollectorFunc) Describe(descs chan<- *prometheus.Desc) {
+}
+
+func (f CollectorFunc) Collect(ch chan<- prometheus.Metric) {
+	f(ch)
+}
