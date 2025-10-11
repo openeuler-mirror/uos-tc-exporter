@@ -4,7 +4,7 @@
 package server
 
 import (
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics"
+	tc_collector "gitee.com/openeuler/uos-tc-exporter/internal/collectors"
 	_ "gitee.com/openeuler/uos-tc-exporter/internal/metrics/collectors/qdisc"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -38,7 +38,8 @@ func (mm *MetricsManager) Setup() {
 
 	// 注册自定义指标
 	// exporter.RegisterPrometheus(mm.promReg)
-	mm.promReg.MustRegister((metrics.NewRegistryV2()))
+	mm.promReg.MustRegister(tc_collector.NewTcCollector())
+	logrus.Info("Metrics registry setup completed")
 }
 
 // GetRegistry 获取Prometheus注册表
