@@ -113,7 +113,7 @@ func (c *QdiscCollector) CollectQdiscMetrics(ch chan<- prometheus.Metric, ns, de
 			value = float64(attrs.Backlog)
 		case "requeues_total":
 			stats2 := tcQdisc.Stats2
-			if stats2 == nil {
+			if stats2 != nil {
 				value = float64(stats2.Requeues)
 			} else {
 				continue

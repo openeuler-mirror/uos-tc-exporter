@@ -68,6 +68,20 @@ func (m *ManagerV2) initializeFactories() {
 	// Initialize and register different factories
 	m.logger.Info("Initializing Qdisc Factory")
 	qdiscFactory := factories.NewQdiscFactory()
+	mc := map[string]config.MetricConfig{
+		"bytes_total":      *config.NewMetricConfig("bytes_total", "QdiscPie byte counter", "qdisc"),
+		"packets_total":    *config.NewMetricConfig("packets_total", "QdiscPie packet counter", "qdisc"),
+		"drops_total":      *config.NewMetricConfig("drops_total", "QdiscPie queue drops", "qdisc"),
+		"overlimits_total": *config.NewMetricConfig("overlimits", "QdiscPie queue overlimits", "qdisc"),
+		"bps":              *config.NewMetricConfig("bps", "QdiscPie bytes per second", "qdisc"),
+		"pps":              *config.NewMetricConfig("pps", "QdiscPie packets per second", "qdisc"),
+		"qlen":             *config.NewMetricConfig("qlen", "QdiscPie current queue length", "qdisc"),
+		"backlog":          *config.NewMetricConfig("backlog", "QdiscPie current backlog in bytes", "qdisc"),
+		"requeues_total":   *config.NewMetricConfig("requeues_total", "QdiscPie number of requeues", "qdisc"),
+	}
+	cfg := config.NewCollectorConfig()
+	cfg.Metrics = mc
+	qdiscFactory.AddConfig("qdisc", cfg)
 	m.factories["qdisc"] = qdiscFactory
 	m.registry.RegisterFactory("qdisc", qdiscFactory)
 	// Add other factories as needed
@@ -106,6 +120,7 @@ func (m *ManagerV2) CollectAll(ch chan<- prometheus.Metric) {
 	}()
 	collectors := m.registry.GetEnableCollectors()
 	for _, collector := range collectors {
+		fmt.Println("Collecting from collector:", collector.ID())
 		collector.Collect(ch)
 	}
 
