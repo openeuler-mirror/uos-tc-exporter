@@ -4,7 +4,6 @@
 package qdisc
 
 import (
-	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/base"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
 	"github.com/florianl/go-tc"
@@ -12,23 +11,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func init() {
-	mc := map[string]config.MetricConfig{
-		"choke_early":   *config.NewMetricConfig("choke_early", "Choke early xstat", "choke"),
-		"choke_marked":  *config.NewMetricConfig("choke_marked", "Choke marked xstat", "choke"),
-		"choke_matched": *config.NewMetricConfig("choke_matched", "Choke matched xstat", "choke"),
-		"choke_other":   *config.NewMetricConfig("choke_other", "Choke other xstat", "choke"),
-		"choke_pdrop":   *config.NewMetricConfig("choke_pdrop", "Choke pdrop xstat", "choke"),
-	}
-	code := NewChokeCollector(config.CollectorConfig{
-		Enabled:    true,
-		Timeout:    5,
-		RetryCount: 3,
-		Metrics:    mc},
-		logrus.StandardLogger(),
-	)
-	exporter.Register(code)
-}
+// func init() {
+// 	mc := map[string]config.MetricConfig{
+// 		"choke_early":   *config.NewMetricConfig("choke_early", "Choke early xstat", "choke"),
+// 		"choke_marked":  *config.NewMetricConfig("choke_marked", "Choke marked xstat", "choke"),
+// 		"choke_matched": *config.NewMetricConfig("choke_matched", "Choke matched xstat", "choke"),
+// 		"choke_other":   *config.NewMetricConfig("choke_other", "Choke other xstat", "choke"),
+// 		"choke_pdrop":   *config.NewMetricConfig("choke_pdrop", "Choke pdrop xstat", "choke"),
+// 	}
+// 	code := NewChokeCollector(config.CollectorConfig{
+// 		Enabled:    true,
+// 		Timeout:    5,
+// 		RetryCount: 3,
+// 		Metrics:    mc},
+// 		logrus.StandardLogger(),
+// 	)
+// 	exporter.Register(code)
+// }
 
 type ChokeCollector struct {
 	*base.QdiscBase
