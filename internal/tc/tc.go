@@ -5,35 +5,9 @@
 package tc
 
 import (
-	"fmt"
-
 	"github.com/florianl/go-tc"
 	"github.com/jsimonetti/rtnetlink"
 )
-
-// HandleStr 返回 TC 句柄的主要和次要部分
-//
-// 参数：
-//   - handle: TC 句柄的 uint32 值
-//
-// 返回：
-//   - uint32: 主要部分
-//   - uint32: 次要部分
-func HandleStr(handle uint32) (uint32, uint32) {
-	return (handle & 0xffff0000) >> 16, handle & 0x0000ffff
-}
-
-// FmtHandleStr 将 TC 句柄格式化为 "major:minor" 字符串
-//
-// 参数：
-//   - handle: TC 句柄的 uint32 值
-//
-// 返回：
-//   - string: 格式化的句柄字符串
-func FmtHandleStr(handle uint32) string {
-	major, minor := HandleStr(handle)
-	return fmt.Sprintf("%d:%d", major, minor)
-}
 
 // GetNetlinkConn 获取指定网络命名空间的 rtnetlink 连接
 //

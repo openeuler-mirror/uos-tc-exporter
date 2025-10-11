@@ -11,11 +11,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var defaultReg *Registry
+var defaultReg = NewRegistry()
 
-func init() {
-	defaultReg = NewRegistry()
-}
+// func init() {
+// 	defaultReg = NewRegistry()
+// }
 
 type Registry struct {
 	metrics map[string]Metric // 使用map替代slice，支持快速查找和删除
