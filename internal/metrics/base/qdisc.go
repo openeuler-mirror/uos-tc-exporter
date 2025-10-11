@@ -4,6 +4,8 @@
 package base
 
 import (
+	"sync"
+
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
 	"gitee.com/openeuler/uos-tc-exporter/internal/tc"
 	"github.com/jsimonetti/rtnetlink"
@@ -53,8 +55,21 @@ func (qb *QdiscBase) CollectMetrics(ch chan<- prometheus.Metric) {
 		return
 	}
 
+	// for _, ns := range nsList {
+	// 	qb.collectForNamespace(ch, ns)
+	// }
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 5) // 控制并发数为5
 	for _, ns := range nsList {
-		qb.collectForNamespace(ch, ns)
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(namespace string) {
+			defer func() {
+				<-sem
+				wg.Done()
+			}()
+			qb.collectForNamespace(ch, namespace)
+		}(ns)
 	}
 }
 
