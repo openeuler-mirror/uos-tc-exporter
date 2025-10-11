@@ -4,7 +4,6 @@
 package qdisc
 
 import (
-	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/base"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
 	"github.com/florianl/go-tc"
@@ -12,22 +11,22 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func init() {
-	mc := map[string]config.MetricConfig{
-		"cbq_avg_idle":    NewCbqConfig("cbq_avg_idle", "CBQ avg idle xstat"),
-		"cbq_borrows":     NewCbqConfig("cbq_borrows", "CBQ borrows xstat"),
-		"cbq_overactions": NewCbqConfig("cbq_overactions", "CBQ overactions xstat"),
-		"cbq_undertime":   NewCbqConfig("cbq_undertime", "CBQ undetime xstat"),
-	}
-	code := NewCbqCollector(config.CollectorConfig{
-		Enabled:    true,
-		Timeout:    5,
-		RetryCount: 3,
-		Metrics:    mc},
-		logrus.StandardLogger(),
-	)
-	exporter.Register(code)
-}
+// func init() {
+// 	mc := map[string]config.MetricConfig{
+// 		"cbq_avg_idle":    NewCbqConfig("cbq_avg_idle", "CBQ avg idle xstat"),
+// 		"cbq_borrows":     NewCbqConfig("cbq_borrows", "CBQ borrows xstat"),
+// 		"cbq_overactions": NewCbqConfig("cbq_overactions", "CBQ overactions xstat"),
+// 		"cbq_undertime":   NewCbqConfig("cbq_undertime", "CBQ undetime xstat"),
+// 	}
+// 	code := NewCbqCollector(config.CollectorConfig{
+// 		Enabled:    true,
+// 		Timeout:    5,
+// 		RetryCount: 3,
+// 		Metrics:    mc},
+// 		logrus.StandardLogger(),
+// 	)
+// 	exporter.Register(code)
+// }
 
 type CbqCollector struct {
 	*base.QdiscBase

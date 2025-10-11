@@ -4,7 +4,6 @@
 package qdisc
 
 import (
-	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/base"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
 	"github.com/florianl/go-tc"
@@ -12,27 +11,27 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func init() {
-	mc := map[string]config.MetricConfig{
-		"bytes_total":      *config.NewMetricConfig("bytes_total", "QdiscPie byte counter", "qdisc"),
-		"packets_total":    *config.NewMetricConfig("packets_total", "QdiscPie packet counter", "qdisc"),
-		"drops_total":      *config.NewMetricConfig("drops_total", "QdiscPie queue drops", "qdisc"),
-		"overlimits_total": *config.NewMetricConfig("overlimits", "QdiscPie queue overlimits", "qdisc"),
-		"bps":              *config.NewMetricConfig("bps", "QdiscPie bytes per second", "qdisc"),
-		"pps":              *config.NewMetricConfig("pps", "QdiscPie packets per second", "qdisc"),
-		"qlen":             *config.NewMetricConfig("qlen", "QdiscPie current queue length", "qdisc"),
-		"backlog":          *config.NewMetricConfig("backlog", "QdiscPie current backlog in bytes", "qdisc"),
-		"requeues_total":   *config.NewMetricConfig("requeues_total", "QdiscPie number of requeues", "qdisc"),
-	}
-	qc := NewQdiscCollector(config.CollectorConfig{
-		Enabled:    true,
-		Timeout:    5,
-		RetryCount: 3,
-		Metrics:    mc},
-		logrus.StandardLogger(),
-	)
-	exporter.Register(qc)
-}
+// func init() {
+// 	mc := map[string]config.MetricConfig{
+// 		"bytes_total":      *config.NewMetricConfig("bytes_total", "QdiscPie byte counter", "qdisc"),
+// 		"packets_total":    *config.NewMetricConfig("packets_total", "QdiscPie packet counter", "qdisc"),
+// 		"drops_total":      *config.NewMetricConfig("drops_total", "QdiscPie queue drops", "qdisc"),
+// 		"overlimits_total": *config.NewMetricConfig("overlimits", "QdiscPie queue overlimits", "qdisc"),
+// 		"bps":              *config.NewMetricConfig("bps", "QdiscPie bytes per second", "qdisc"),
+// 		"pps":              *config.NewMetricConfig("pps", "QdiscPie packets per second", "qdisc"),
+// 		"qlen":             *config.NewMetricConfig("qlen", "QdiscPie current queue length", "qdisc"),
+// 		"backlog":          *config.NewMetricConfig("backlog", "QdiscPie current backlog in bytes", "qdisc"),
+// 		"requeues_total":   *config.NewMetricConfig("requeues_total", "QdiscPie number of requeues", "qdisc"),
+// 	}
+// 	qc := NewQdiscCollector(config.CollectorConfig{
+// 		Enabled:    true,
+// 		Timeout:    5,
+// 		RetryCount: 3,
+// 		Metrics:    mc},
+// 		logrus.StandardLogger(),
+// 	)
+// 	exporter.Register(qc)
+// }
 
 type QdiscCollector struct {
 	*base.QdiscBase
