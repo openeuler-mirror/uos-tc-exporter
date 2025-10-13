@@ -71,6 +71,8 @@ func (qb *QdiscBase) CollectMetrics(ch chan<- prometheus.Metric) {
 			qb.collectForNamespace(ch, namespace)
 		}(ns)
 	}
+	wg.Wait()
+	qb.Logger.Infof("Finished collecting qdisc %s metrics", qb.QdiscType)
 }
 
 // collectForNamespace 收集指定命名空间的指标
