@@ -6,17 +6,26 @@ package interfaces
 import "github.com/prometheus/client_golang/prometheus"
 
 type MetricCollector interface {
+	Identifiable
 	// Collect 收集指标数据
-	Collect(ch chan<- prometheus.Metric)
+	Collectible
+	// 配置
+	Configurable
+}
+
+type Identifiable interface {
 	ID() string
 	Name() string
 	Description() string
+}
+
+type Configurable interface {
+	GetConfig() any
+	SetConfig(any) error
+}
+
+type Collectible interface {
+	Collect(chan<- prometheus.Metric)
 	Enabled() bool
 	SetEnabled(enabled bool)
-
-	// GetConfig 获取收集器配置
-	GetConfig() any
-
-	// SetConfig 设置收集器配置
-	SetConfig(config any) error
 }
