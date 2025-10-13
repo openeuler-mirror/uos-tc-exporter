@@ -21,12 +21,14 @@ import (
 
 // HttpServer 负责HTTP服务器管理
 type HttpServer struct {
-	server      *http.Server
-	handlers    []HandlerFunc
-	handlersMu  sync.RWMutex // 保护handlers切片的读写锁
-	config      exporter.Config
-	metricsPath string
-	promReg     *prometheus.Registry
+	server        *http.Server
+	handlers      []HandlerFunc
+	handlersMu    sync.RWMutex // 保护handlers切片的读写锁
+	config        exporter.Config
+	metricsPath   string
+	promReg       *prometheus.Registry
+	healthManager *HealthManager
+	version       string
 }
 
 // NewHttpServer 创建新的HTTP服务器
@@ -61,6 +63,11 @@ func (hs *HttpServer) Setup(metricsManager *MetricsManager) error {
 			return customErr
 		}
 		hs.Use(Ratelimit(rateLimiter))
+	}
+
+	// 设置健康检查
+	if err := hs.setupHealthCheck(mux); err != nil {
+		return err
 	}
 
 	// 设置地址
