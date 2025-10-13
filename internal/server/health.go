@@ -83,7 +83,7 @@ func (h *HealthManager) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	for _, checker := range h.checkers {
 		if err := checker.Check(); err != nil {
 			status = "unhealthy"
-			errors = append(errors, err.Error())
+			errors = append(errors, fmt.Sprintf("%s: %v", checker.Name(), err))
 			details[checker.Name()] = map[string]interface{}{
 				"status":  "failed",
 				"error":   err.Error(),
@@ -100,8 +100,23 @@ func (h *HealthManager) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	// 如果有错误，设置HTTP状态码
 	if status == "unhealthy" {
 		w.WriteHeader(http.StatusServiceUnavailable)
+		// 在错误响应中包含错误详情
+		response := HealthStatus{
+			Status:    status,
+			Timestamp: time.Now().UTC().Format(time.RFC3339),
+			Version:   h.version,
+			Uptime:    h.GetUptime(),
+			Details:   details,
+		}
+		
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			h.logger.Errorf("Failed to encode health response: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
 	}
 
+	// 健康状态响应
 	response := HealthStatus{
 		Status:    status,
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
