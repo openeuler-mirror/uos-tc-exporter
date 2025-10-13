@@ -217,6 +217,34 @@ func (hs *HttpServer) Stop() error {
 	return nil
 }
 
+// setupHealthCheck 设置健康检查端点
+func (hs *HttpServer) setupHealthCheck(mux *http.ServeMux) error {
+	// 创建健康管理器
+	hs.healthManager = NewHealthManager(hs.version, logrus.StandardLogger())
+	
+	// 注册健康检查器
+	hs.healthManager.RegisterChecker(NewTCHealthChecker(logrus.StandardLogger()))
+	hs.healthManager.RegisterChecker(NewMetricsHealthChecker(logrus.StandardLogger()))
+	
+	// 注册健康检查端点
+	mux.HandleFunc("/health", hs.healthManager.HealthHandler)
+	mux.HandleFunc("/ready", hs.healthManager.ReadyHandler)
+	mux.HandleFunc("/live", hs.healthManager.LivenessHandler)
+	
+	// 设置服务为就绪状态
+	hs.healthManager.SetReady(true)
+	
+	logrus.Info("Health check endpoints registered: /health, /ready, /live")
+	return nil
+}
+
+// SetReady 设置服务就绪状态
+func (hs *HttpServer) SetReady(ready bool) {
+	if hs.healthManager != nil {
+		hs.healthManager.SetReady(ready)
+	}
+}
+
 // GetServer 获取HTTP服务器实例
 func (hs *HttpServer) GetServer() *http.Server {
 	return hs.server
