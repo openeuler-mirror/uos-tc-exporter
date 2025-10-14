@@ -104,6 +104,18 @@ func (hs *HttpServer) setupLandingPage(mux *http.ServeMux) error {
 				Text:    "Metrics",
 				Address: hs.metricsPath,
 			},
+			{
+				Text:    "Health",
+				Address: "health",
+			},
+			{
+				Text:    "Ready",
+				Address: "ready",
+			},
+			{
+				Text:    "Live",
+				Address: "live",
+			},
 		},
 	}
 
@@ -221,19 +233,19 @@ func (hs *HttpServer) Stop() error {
 func (hs *HttpServer) setupHealthCheck(mux *http.ServeMux) error {
 	// 创建健康管理器
 	hs.healthManager = NewHealthManager(hs.version, logrus.StandardLogger())
-	
+
 	// 注册健康检查器
 	hs.healthManager.RegisterChecker(NewTCHealthChecker(logrus.StandardLogger()))
 	hs.healthManager.RegisterChecker(NewMetricsHealthChecker(logrus.StandardLogger()))
-	
+
 	// 注册健康检查端点
 	mux.HandleFunc("/health", hs.healthManager.HealthHandler)
 	mux.HandleFunc("/ready", hs.healthManager.ReadyHandler)
 	mux.HandleFunc("/live", hs.healthManager.LivenessHandler)
-	
+
 	// 设置服务为就绪状态
 	hs.healthManager.SetReady(true)
-	
+
 	logrus.Info("Health check endpoints registered: /health, /ready, /live")
 	return nil
 }
