@@ -30,15 +30,15 @@ const (
 	ErrCodeAuth       ErrorCode = 3002
 
 	// 业务逻辑错误码 (4000-4999)
-	ErrCodeBusiness        ErrorCode = 4000
-	ErrCodeMetrics         ErrorCode = 4001
-	ErrCodeLandingPage     ErrorCode = 4002
-	ErrCodeMetricsCollect  ErrorCode = 4003
+	ErrCodeBusiness         ErrorCode = 4000
+	ErrCodeMetrics          ErrorCode = 4001
+	ErrCodeLandingPage      ErrorCode = 4002
+	ErrCodeMetricsCollect   ErrorCode = 4003
 	ErrCodeConfigValidation ErrorCode = 4004
 	ErrCodeNetlinkOperation ErrorCode = 4005
 
 	// TC 操作错误码 (5000-5999)
-	ErrCodeTCOperation     ErrorCode = 5000
+	ErrCodeTCOperation    ErrorCode = 5000
 	ErrCodeQdiscOperation ErrorCode = 5001
 	ErrCodeClassOperation ErrorCode = 5002
 )
@@ -48,7 +48,7 @@ type Error struct {
 	Code    ErrorCode
 	Message string
 	Err     error
-	Context map[string]interface{}
+	Context map[string]any
 }
 
 // New 创建新的错误
@@ -56,7 +56,7 @@ func New(code ErrorCode, message string) *Error {
 	return &Error{
 		Code:    code,
 		Message: message,
-		Context: make(map[string]interface{}),
+		Context: make(map[string]any),
 	}
 }
 
@@ -74,7 +74,7 @@ func Wrap(err error, code ErrorCode, message string) *Error {
 			Code:    code,
 			Message: message,
 			Err:     err,
-			Context: make(map[string]interface{}),
+			Context: make(map[string]any),
 		}
 	}
 
@@ -82,9 +82,9 @@ func Wrap(err error, code ErrorCode, message string) *Error {
 }
 
 // WithContext 添加错误上下文
-func (e *Error) WithContext(key string, value interface{}) *Error {
+func (e *Error) WithContext(key string, value any) *Error {
 	if e.Context == nil {
-		e.Context = make(map[string]interface{})
+		e.Context = make(map[string]any)
 	}
 	e.Context[key] = value
 	return e
@@ -131,7 +131,7 @@ func (e *Error) GetCode() ErrorCode {
 }
 
 // GetContext 获取错误上下文
-func (e *Error) GetContext() map[string]interface{} {
+func (e *Error) GetContext() map[string]any {
 	return e.Context
 }
 
@@ -152,7 +152,7 @@ func GetErrorCode(err error) ErrorCode {
 }
 
 // GetErrorContext 获取错误上下文
-func GetErrorContext(err error) map[string]interface{} {
+func GetErrorContext(err error) map[string]any {
 	if e, ok := err.(*Error); ok {
 		return e.Context
 	}
@@ -160,7 +160,7 @@ func GetErrorContext(err error) map[string]interface{} {
 }
 
 // WrapWithContext 包装错误并添加上下文
-func WrapWithContext(err error, code ErrorCode, message string, ctx map[string]interface{}) *Error {
+func WrapWithContext(err error, code ErrorCode, message string, ctx map[string]any) *Error {
 	customErr := Wrap(err, code, message)
 	if customErr == nil {
 		return nil
@@ -173,7 +173,7 @@ func WrapWithContext(err error, code ErrorCode, message string, ctx map[string]i
 }
 
 // NewWithContext 创建新错误并添加上下文
-func NewWithContext(code ErrorCode, message string, ctx map[string]interface{}) *Error {
+func NewWithContext(code ErrorCode, message string, ctx map[string]any) *Error {
 	err := New(code, message)
 	for k, v := range ctx {
 		err.WithContext(k, v)
@@ -202,11 +202,11 @@ func GetErrorSeverity(err error) string {
 	case code >= 1000 && code < 2000:
 		return "critical" // 系统级错误
 	case code >= 2000 && code < 3000:
-		return "high"      // 服务级错误
+		return "high" // 服务级错误
 	case code >= 3000 && code < 4000:
-		return "medium"    // 中间件错误
+		return "medium" // 中间件错误
 	case code >= 4000 && code < 6000:
-		return "low"       // 业务逻辑错误
+		return "low" // 业务逻辑错误
 	default:
 		return "unknown"
 	}

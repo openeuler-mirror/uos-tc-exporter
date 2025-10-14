@@ -19,6 +19,22 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	invalidPathChars  = regexp.MustCompile(`[<>:"|?*]`)
+	domainLabelRegex  = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
+	interfacePatterns = []*regexp.Regexp{
+		regexp.MustCompile(`^eth\d+$`),        // eth0, eth1
+		regexp.MustCompile(`^wlan\d+$`),       // wlan0, wlan1
+		regexp.MustCompile(`^ens\d+$`),        // ens33, ens34
+		regexp.MustCompile(`^enp\d+s\d+$`),    // enp0s3, enp0s8
+		regexp.MustCompile(`^docker\d+$`),     // docker0, docker1
+		regexp.MustCompile(`^br\d+$`),         // br0, br1
+		regexp.MustCompile(`^lo$`),            // loopback
+		regexp.MustCompile(`^veth[a-f0-9]+$`), // veth123456
+	}
+	}
+)
+
 // ServerConfig 服务器相关配置
 type ServerConfig struct {
 	ShutdownTimeout time.Duration `yaml:"shutdownTimeout"` // 优雅关闭超时时间
@@ -152,7 +168,7 @@ func (c *Config) validateMetricsPath() error {
 	}
 
 	// 检查路径是否包含非法字符
-	invalidChars := regexp.MustCompile(`[<>:"|?*]`)
+	invalidChars := invalidPathChars
 	if invalidChars.MatchString(c.MetricsPath) {
 		return fmt.Errorf("metrics path contains invalid characters: %s", c.MetricsPath)
 	}
@@ -179,7 +195,7 @@ func (c *Config) isValidDomain(domain string) bool {
 			return false
 		}
 		// 标签只能包含字母、数字和连字符
-		if !regexp.MustCompile(`^[a-zA-Z0-9-]+$`).MatchString(label) {
+		if !domainLabelRegex.MatchString(label) {
 			return false
 		}
 		// 标签不能以连字符开头或结尾
@@ -199,7 +215,7 @@ func (c *Config) isValidInterface(iface string) bool {
 	}
 
 	// 接口名称只能包含字母、数字、连字符和下划线
-	if !regexp.MustCompile(`^[a-zA-Z0-9_-]+$`).MatchString(iface) {
+	if !domainLabelRegex.MatchString(iface) {
 		return false
 	}
 
@@ -213,16 +229,7 @@ func (c *Config) isValidInterface(iface string) bool {
 
 	// 更严格的验证：必须是常见的接口命名模式
 	// 例如：eth0, wlan0, ens33, enp0s3 等
-	validPatterns := []*regexp.Regexp{
-		regexp.MustCompile(`^eth\d+$`),        // eth0, eth1
-		regexp.MustCompile(`^wlan\d+$`),       // wlan0, wlan1
-		regexp.MustCompile(`^ens\d+$`),        // ens33, ens34
-		regexp.MustCompile(`^enp\d+s\d+$`),    // enp0s3, enp0s8
-		regexp.MustCompile(`^docker\d+$`),     // docker0, docker1
-		regexp.MustCompile(`^br\d+$`),         // br0, br1
-		regexp.MustCompile(`^lo$`),            // loopback
-		regexp.MustCompile(`^veth[a-f0-9]+$`), // veth123456
-	}
+	validPatterns := interfacePatterns
 
 	for _, pattern := range validPatterns {
 		if pattern.MatchString(iface) {
