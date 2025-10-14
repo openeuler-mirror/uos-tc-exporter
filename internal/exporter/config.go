@@ -14,6 +14,7 @@ import (
 	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/utils"
 	"github.com/alecthomas/kingpin"
+	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -25,9 +26,9 @@ type ServerConfig struct {
 
 type Config struct {
 	Logging     logger.Config `yaml:"log"`
-	Address     string        `yaml:"address"`
-	Port        int           `yaml:"port"`
-	MetricsPath string        `yaml:"metricsPath"`
+	Address     string        `yaml:"address" validate:"required,ip|hostname|interface"`
+	Port        int           `yaml:"port" validate:"required,min=1,max=65535"`
+	MetricsPath string        `yaml:"metricsPath" validate:"required,startswith=/"`
 	Server      ServerConfig  `yaml:"server"`
 }
 
@@ -77,19 +78,11 @@ func Unpack(config interface{}) error {
 func (c *Config) Validate() error {
 	var errors []string
 
-	// 验证地址格式
-	if err := c.validateAddress(); err != nil {
-		errors = append(errors, fmt.Sprintf("address validation failed: %v", err))
-	}
-
-	// 验证端口范围
-	if err := c.validatePort(); err != nil {
-		errors = append(errors, fmt.Sprintf("port validation failed: %v", err))
-	}
-
-	// 验证指标路径
-	if err := c.validateMetricsPath(); err != nil {
-		errors = append(errors, fmt.Sprintf("metrics path validation failed: %v", err))
+	validate := validator.New()
+	if err := validate.Struct(c); err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			errors = append(errors, fmt.Sprintf("field '%s' failed validation tag '%s'", err.Field(), err.Tag()))
+		}
 	}
 
 	// 验证日志配置
