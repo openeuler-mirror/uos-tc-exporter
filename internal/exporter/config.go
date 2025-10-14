@@ -32,7 +32,6 @@ var (
 		regexp.MustCompile(`^lo$`),            // loopback
 		regexp.MustCompile(`^veth[a-f0-9]+$`), // veth123456
 	}
-	}
 )
 
 // ServerConfig 服务器相关配置
