@@ -37,6 +37,7 @@ func NewHttpServer(config exporter.Config, metricsPath string, promReg *promethe
 		config:      config,
 		metricsPath: metricsPath,
 		promReg:     promReg,
+		version:     "1.0.0", // 设置默认版本号
 	}
 }
 
