@@ -66,6 +66,8 @@ func (hs *HttpServer) Setup(metricsManager *MetricsManager) error {
 		hs.Use(Ratelimit(rateLimiter))
 	}
 
+	// panic recovery 改为在 ServeHTTP 顶层统一处理
+
 	// 设置健康检查
 	if err := hs.setupHealthCheck(mux); err != nil {
 		return err
@@ -78,8 +80,13 @@ func (hs *HttpServer) Setup(metricsManager *MetricsManager) error {
 
 	// 创建HTTP服务器
 	hs.server = &http.Server{
-		Addr:    addr,
-		Handler: mux,
+		Addr:              addr,
+		Handler:           mux,
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      20 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1MB
 	}
 
 	// 设置着陆页
@@ -141,6 +148,12 @@ func (hs *HttpServer) setupLandingPage(mux *http.ServeMux) error {
 
 // ServeHTTP 实现http.Handler接口
 func (hs *HttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			logrus.Errorf("panic recovered in ServeHTTP: %v", rec)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+	}()
 	req := hs.createRequest(w, r)
 	hs.handlersMu.RLock()
 	defer hs.handlersMu.RUnlock()
@@ -151,9 +164,13 @@ func (hs *HttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 处理指标请求 - 这里需要从外部传入metricsManager
-	// 暂时使用默认的prometheus注册表
-	promhttp.HandlerFor(hs.promReg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
+	// 处理指标请求 - 使用更安全的 promhttp 选项
+	handler := promhttp.HandlerFor(hs.promReg, promhttp.HandlerOpts{
+		EnableOpenMetrics: true,
+		ErrorLog:          logrus.StandardLogger(),
+		// ErrorHandling 可按需要改为 ContinueOnError 以便部分指标失败时仍返回其余指标
+	})
+	handler.ServeHTTP(w, r)
 }
 
 // Use 添加中间件处理器
