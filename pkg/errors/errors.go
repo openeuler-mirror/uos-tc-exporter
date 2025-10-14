@@ -98,26 +98,25 @@ func (e *Error) WithError(err error) *Error {
 
 // Error 实现error接口
 func (e *Error) Error() string {
-	var parts []string
+	var builder strings.Builder
 
 	if e.Code != 0 {
-		parts = append(parts, fmt.Sprintf("[%d]", e.Code))
+		builder.WriteString(fmt.Sprintf("[%d]", e.Code))
 	}
-
 	if e.Message != "" {
-		parts = append(parts, e.Message)
+		builder.WriteString(e.Message)
 	}
 
 	if e.Err != nil {
-		parts = append(parts, fmt.Sprintf("caused by: %v", e.Err))
+		builder.WriteString(fmt.Sprintf("caused by: %v", e.Err))
 	}
 
 	if len(e.Context) > 0 {
 		contextStr := fmt.Sprintf("context: %v", e.Context)
-		parts = append(parts, contextStr)
+		builder.WriteString(contextStr)
 	}
 
-	return strings.Join(parts, " ")
+	return builder.String()
 }
 
 // Unwrap 实现errors.Unwrap接口
