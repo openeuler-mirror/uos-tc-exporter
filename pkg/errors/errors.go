@@ -49,6 +49,7 @@ type Error struct {
 	Message string
 	Err     error
 	Context map[string]any
+	IsTemporary bool
 }
 
 // New 创建新的错误
