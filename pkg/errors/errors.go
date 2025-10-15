@@ -182,6 +182,9 @@ func NewWithContext(code ErrorCode, message string, ctx map[string]any) *Error {
 
 // IsTemporaryError 检查是否为临时错误（可重试）
 func IsTemporaryError(err error) bool {
+	if e, ok := err.(*Error); ok {
+		return e.IsTemporary
+	}
 	code := GetErrorCode(err)
 	// 网络错误、限流错误等通常是临时的
 	return code == ErrCodeNetwork || code == ErrCodeRateLimit
