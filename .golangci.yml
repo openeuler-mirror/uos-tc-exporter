@@ -1,0 +1,125 @@
+# GolangCI-Lint 配置文件
+# 用于代码质量检查和静态分析
+
+run:
+  # 并发执行检查
+  concurrency: 4
+  # 超时时间
+  timeout: 5m
+  # 要检查的模块
+  modules-download-mode: readonly
+
+# 输出配置
+output:
+  # 输出格式
+  format: colored-line-number
+  # 打印问题编号
+  print-issued-lines: true
+  # 打印linter名称
+  print-linter-name: true
+
+# 启用的linters
+linters:
+  enable:
+    # 基础检查
+    - errcheck           # 检查未处理的错误
+    - gosimple           # 简化代码建议
+    - govet              # Go vet检查
+    - ineffassign        # 检查无效赋值
+    - staticcheck        # 静态分析
+    - typecheck          # 类型检查
+    - unused             # 检查未使用的代码
+    - gocritic           # 代码质量检查
+    
+    # 代码格式
+    - gofmt              # 代码格式检查
+    - goimports          # 导入排序
+    
+    # 性能相关
+    - gocyclo            # 圈复杂度检查
+    - goconst            # 重复常量检查
+    
+    # 安全相关
+    - gosec              # 安全检查
+
+# linter配置
+linters-settings:
+  gocyclo:
+    # 圈复杂度阈值
+    min-complexity: 15
+    
+  goconst:
+    # 最小重复次数
+    min-len: 3
+    # 最小出现次数
+    min-occurrences: 3
+    
+  gocritic:
+    # 启用的检查器
+    enabled-tags:
+      - performance
+      - style
+      - diagnostic
+    disabled-tags:
+      - experimental
+      
+  govet:
+    check-shadowing: true
+    fieldalignment: true
+    # 禁用一些过于严格的检查
+    disable:
+      - fieldalignment
+    
+  gosec:
+    # 排除的检查项
+    excludes:
+      - G104  # 审计错误不处理
+      - G307  # defer file.Close()
+
+# 问题配置
+issues:
+  # 排除默认的排除项
+  exclude-use-default: false
+  # 每个linter的最大问题数
+  max-issues-per-linter: 0
+  # 相同问题的最大数量
+  max-same-issues: 0
+  
+  # 排除规则
+  exclude-rules:
+    # 排除测试文件中的未使用导出函数
+    - path: _test\.go
+      linters:
+        - unused
+        - goconst
+        
+    # 排除vendor目录
+    - path: vendor/
+      text: ".*"
+      
+    # 排除生成的代码
+    - path: internal/metrics/base/
+      linters:
+        - unused
+        - gosimple
+
+# 排除的文件和目录
+exclude-dirs:
+  - vendor
+  - build
+  - dist
+  - .git
+
+exclude-files:
+  - ".*_test.go"
+  - ".*_generated.go"
+
+# 性能优化
+severity:
+  # 默认严重级别
+  default-severity: warning
+  
+# 资源限制
+resource-limits:
+  max-cpu: 80%
+  max-memory: 1GiB

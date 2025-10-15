@@ -23,7 +23,7 @@ BINARY_PATH := $(BUILD_DIR)/$(BINARY_NAME)
 
 # 默认目标
 .PHONY: all
-all: clean build
+all: lint test build
 
 # 帮助信息
 .PHONY: help
@@ -31,6 +31,8 @@ help:
 	@echo "Available targets:"
 	@echo "  build      - Build the binary"
 	@echo "  test       - Run tests"
+	@echo "  test-coverage - Run tests with coverage report"
+	@echo "  lint       - Run code quality checks"
 	@echo "  clean      - Clean build artifacts"
 	@echo "  help       - Show this help message"
 
@@ -53,7 +55,33 @@ build: $(BUILD_DIR)
 .PHONY: test
 test:
 	@echo "Running tests..."
-	$(GOTEST) -v ./...
+	$(GOTEST) -v -race ./...
+
+# 运行测试并生成覆盖率报告
+.PHONY: test-coverage
+test-coverage:
+	@echo "Running tests with coverage..."
+	$(GOTEST) -covermode=atomic -coverprofile=coverage.out ./...
+	$(GO) tool cover -func=coverage.out
+	@echo "Coverage report generated: coverage.out"
+	@echo "HTML coverage report: coverage.html (run 'make coverage-html')"
+
+# 生成HTML覆盖率报告
+.PHONY: coverage-html
+coverage-html: test-coverage
+	$(GO) tool cover -html=coverage.out -o coverage.html
+	@echo "HTML coverage report generated: coverage.html"
+
+# 运行代码质量检查
+.PHONY: lint
+lint:
+	@echo "Running code quality checks..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "Installing golangci-lint..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.54.2; \
+	fi
+	golangci-lint run ./...
+	@echo "Code quality checks completed"
 
 # 清理构建产物
 .PHONY: clean
