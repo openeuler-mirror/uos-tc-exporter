@@ -225,7 +225,15 @@ func IsPermanentError(err error) bool {
 
 // GetErrorSeverity 获取错误严重程度
 func GetErrorSeverity(err error) string {
+	if e, ok := err.(*Error); ok {
+		return e.Severity
+	}
 	code := GetErrorCode(err)
+	return getSeverityByCode(code)
+}
+
+// 根据错误码获取严重程度
+func getSeverityByCode(code ErrorCode) string {
 	switch {
 	case code >= 1000 && code < 2000:
 		return "critical" // 系统级错误
