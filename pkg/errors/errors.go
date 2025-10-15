@@ -45,19 +45,34 @@ const (
 
 // Error 自定义错误结构
 type Error struct {
-	Code    ErrorCode
-	Message string
-	Err     error
-	Context map[string]any
+	Code        ErrorCode
+	Message     string
+	Err         error
+	Context     map[string]any
+	Timestamp   time.Time
+	Stack       []string
+	CallerFile  string
+	CallerLine  int
+	CallerFunc  string
+	Severity    string
 	IsTemporary bool
 }
 
 // New 创建新的错误
 func New(code ErrorCode, message string) *Error {
+	pc, file, line, _ := runtime.Caller(1)
+	fn := runtime.FuncForPC(pc)
+
 	return &Error{
-		Code:    code,
-		Message: message,
-		Context: make(map[string]any),
+		Code:        code,
+		Message:     message,
+		Context:     make(map[string]any),
+		Timestamp:   time.Now(),
+		CallerFile:  file,
+		CallerLine:  line,
+		CallerFunc:  fn.Name(),
+		Severity:    getSeverityByCode(code),
+		IsTemporary: isTemporaryByCode(code),
 	}
 }
 
@@ -67,15 +82,27 @@ func Wrap(err error, code ErrorCode, message string) *Error {
 		return nil
 	}
 
+	pc, file, line, _ := runtime.Caller(1)
+	fn := runtime.FuncForPC(pc)
+
 	var customErr *Error
 	if e, ok := err.(*Error); ok {
 		customErr = e
+		// 更新包装信息
+		customErr.Message = message
+		customErr.Code = code
 	} else {
 		customErr = &Error{
-			Code:    code,
-			Message: message,
-			Err:     err,
-			Context: make(map[string]any),
+			Code:        code,
+			Message:     message,
+			Err:         err,
+			Context:     make(map[string]any),
+			Timestamp:   time.Now(),
+			CallerFile:  file,
+			CallerLine:  line,
+			CallerFunc:  fn.Name(),
+			Severity:    getSeverityByCode(code),
+			IsTemporary: isTemporaryByCode(code),
 		}
 	}
 
