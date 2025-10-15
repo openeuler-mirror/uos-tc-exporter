@@ -192,9 +192,7 @@ func IsTemporaryError(err error) bool {
 
 // IsPermanentError 检查是否为永久错误（不可重试）
 func IsPermanentError(err error) bool {
-	code := GetErrorCode(err)
-	// 配置错误、权限错误等通常是永久的
-	return code == ErrCodeConfig || code == ErrCodeAuth
+	return !IsTemporaryError(err)
 }
 
 // GetErrorSeverity 获取错误严重程度
