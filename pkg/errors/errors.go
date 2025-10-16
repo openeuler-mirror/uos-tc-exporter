@@ -248,6 +248,12 @@ func getSeverityByCode(code ErrorCode) string {
 	}
 }
 
+// 根据错误码判断是否为临时错误
+func isTemporaryByCode(code ErrorCode) bool {
+	// 网络错误、限流错误等通常是临时的
+	return code == ErrCodeNetwork || code == ErrCodeRateLimit
+}
+
 // ErrorStack 获取错误堆栈信息
 func ErrorStack(err error) []string {
 	var stack []string
