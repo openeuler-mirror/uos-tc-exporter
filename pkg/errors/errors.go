@@ -339,3 +339,62 @@ func ErrorStack(err error) []string {
 
 	return stack
 }
+
+// LoggableError 返回适合日志记录的错误信息
+func LoggableError(err error) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	if e, ok := err.(*Error); ok {
+		result["code"] = e.Code
+		result["message"] = e.Message
+		result["severity"] = e.Severity
+		result["is_temporary"] = e.IsTemporary
+		result["timestamp"] = e.Timestamp
+		result["caller"] = fmt.Sprintf("%s:%d %s", e.CallerFile, e.CallerLine, e.CallerFunc)
+
+		if e.Err != nil {
+			result["cause"] = e.Err.Error()
+		}
+		if len(e.Context) > 0 {
+			result["context"] = e.Context
+		}
+	} else {
+		result["message"] = err.Error()
+		result["severity"] = "unknown"
+	}
+
+	return result
+}
+
+// RecoverAndWrap 从panic中恢复并包装错误
+func RecoverAndWrap(code ErrorCode, message string) {
+	if r := recover(); r != nil {
+		var err error
+		switch v := r.(type) {
+		case error:
+			err = v
+		default:
+			err = fmt.Errorf("%v", v)
+		}
+		panic(Wrap(err, code, message))
+	}
+}
+
+// SafeExecute 安全执行函数，捕获panic并返回错误
+func SafeExecute(fn func() error, code ErrorCode, message string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var panicErr error
+			switch v := r.(type) {
+			case error:
+				panicErr = v
+			default:
+				panicErr = fmt.Errorf("%v", v)
+			}
+			err = Wrap(panicErr, code, message)
+		}
+	}()
+
+	return fn()
+}
+
