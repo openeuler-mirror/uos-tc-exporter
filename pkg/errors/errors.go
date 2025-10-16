@@ -139,12 +139,16 @@ func (e *Error) Error() string {
 	}
 
 	if e.Err != nil {
-		builder.WriteString(fmt.Sprintf("caused by: %v", e.Err))
+		builder.WriteString(fmt.Sprintf(" (caused by: %v)", e.Err))
 	}
 
 	if len(e.Context) > 0 {
-		contextStr := fmt.Sprintf("context: %v", e.Context)
-		builder.WriteString(contextStr)
+		contextJSON, _ := json.Marshal(e.Context)
+		builder.WriteString(fmt.Sprintf(" [context: %s]", string(contextJSON)))
+	}
+
+	if e.CallerFile != "" {
+		builder.WriteString(fmt.Sprintf(" [at %s:%d %s]", e.CallerFile, e.CallerLine, e.CallerFunc))
 	}
 
 	return builder.String()
