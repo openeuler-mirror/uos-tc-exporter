@@ -254,6 +254,26 @@ func isTemporaryByCode(code ErrorCode) bool {
 	return code == ErrCodeNetwork || code == ErrCodeRateLimit
 }
 
+// ShouldRetry 判断是否应该重试
+func ShouldRetry(err error, maxRetries int, currentRetry int) bool {
+	if currentRetry >= maxRetries {
+		return false
+	}
+	return IsTemporaryError(err)
+}
+
+// GetRetryDelay 获取重试延迟时间（指数退避）
+func GetRetryDelay(err error, currentRetry int) time.Duration {
+	baseDelay := time.Second
+	maxDelay := 30 * time.Second
+
+	delay := baseDelay * time.Duration(1<<uint(currentRetry))
+	if delay > maxDelay {
+		delay = maxDelay
+	}
+	return delay
+}
+
 // ErrorStack 获取错误堆栈信息
 func ErrorStack(err error) []string {
 	var stack []string
