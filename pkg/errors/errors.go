@@ -4,8 +4,11 @@
 package errors
 
 import (
+	"encoding/json"
 	"fmt"
+	"runtime"
 	"strings"
+	"time"
 )
 
 // ErrorCode 定义错误码类型
@@ -147,6 +150,44 @@ func (e *Error) Error() string {
 	return builder.String()
 }
 
+// JSON 返回错误的JSON表示
+func (e *Error) JSON() string {
+	type ErrorJSON struct {
+		Code        ErrorCode     `json:"code"`
+		Message     string        `json:"message"`
+		Cause       string        `json:"cause,omitempty"`
+		Context     map[string]any `json:"context,omitempty"`
+		Timestamp   time.Time     `json:"timestamp"`
+		Severity    string        `json:"severity"`
+		IsTemporary bool          `json:"is_temporary"`
+		Caller      string        `json:"caller,omitempty"`
+	}
+
+	cause := ""
+	if e.Err != nil {
+		cause = e.Err.Error()
+	}
+
+	caller := ""
+	if e.CallerFile != "" {
+		caller = fmt.Sprintf("%s:%d %s", e.CallerFile, e.CallerLine, e.CallerFunc)
+	}
+
+	errorJSON := ErrorJSON{
+		Code:        e.Code,
+		Message:     e.Message,
+		Cause:       cause,
+		Context:     e.Context,
+		Timestamp:   e.Timestamp,
+		Severity:    e.Severity,
+		IsTemporary: e.IsTemporary,
+		Caller:      caller,
+	}
+
+	jsonBytes, _ := json.MarshalIndent(errorJSON, "", "  ")
+	return string(jsonBytes)
+}
+
 // Unwrap 实现errors.Unwrap接口
 func (e *Error) Unwrap() error {
 	return e.Err
@@ -280,7 +321,11 @@ func ErrorStack(err error) []string {
 	current := err
 
 	for current != nil {
-		stack = append(stack, current.Error())
+		if e, ok := current.(*Error); ok {
+			stack = append(stack, e.JSON())
+		} else {
+			stack = append(stack, current.Error())
+		}
 		if wrapped, ok := current.(interface{ Unwrap() error }); ok {
 			current = wrapped.Unwrap()
 		} else {
