@@ -4,6 +4,7 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -112,18 +113,39 @@ func (m *ManagerV2) Shutdown() {
 
 // CollectAll 收集所有指标
 func (m *ManagerV2) CollectAll(ch chan<- prometheus.Metric) {
+	m.CollectAllWithContext(context.Background(), ch)
+}
+
+// CollectAllWithContext 使用上下文收集所有指标
+func (m *ManagerV2) CollectAllWithContext(ctx context.Context, ch chan<- prometheus.Metric) {
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
 		// m.stats.RecordCollection(duration, true, nil)
 		fmt.Printf("Collection took %v\n", duration)
 	}()
-	collectors := m.registry.GetEnableCollectors()
-	for _, collector := range collectors {
-		fmt.Println("Collecting from collector:", collector.ID())
-		collector.Collect(ch)
+
+	// 检查上下文是否已取消
+	select {
+	case <-ctx.Done():
+		m.logger.Warnf("Collection cancelled due to context: %v", ctx.Err())
+		return
+	default:
 	}
 
+	collectors := m.registry.GetEnableCollectors()
+	for _, collector := range collectors {
+		// 检查上下文是否已取消
+		select {
+		case <-ctx.Done():
+			m.logger.Warnf("Collection cancelled during collector %s: %v", collector.ID(), ctx.Err())
+			return
+		default:
+		}
+
+		m.logger.Debugf("Collecting from collector: %s", collector.ID())
+		collector.Collect(ch)
+	}
 }
 
 // GetCollector 获取收集器
