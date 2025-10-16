@@ -191,22 +191,40 @@ func (hs *HttpServer) createRequest(w http.ResponseWriter, r *http.Request) *Req
 
 // Run 启动HTTP服务器
 func (hs *HttpServer) Run() error {
+	return hs.RunWithContext(context.Background())
+}
+
+// RunWithContext 使用上下文启动HTTP服务器
+func (hs *HttpServer) RunWithContext(ctx context.Context) error {
 	if hs.server == nil {
 		return fmt.Errorf("HTTP server not initialized")
 	}
 
 	logrus.Infof("Running HTTP server on %s", hs.server.Addr)
-	if err := hs.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		customErr := errors.Wrap(err, errors.ErrCodeServerRun, "HTTP server listen and serve failed")
-		customErr.WithContext("address", hs.server.Addr)
-		logrus.WithFields(logrus.Fields{
-			"error_code": customErr.Code,
-			"error":      customErr.Error(),
-			"address":    hs.server.Addr,
-		}).Error("HTTP server listen and serve failed")
-		return customErr
+
+	// 在单独的 goroutine 中启动服务器
+	errChan := make(chan error, 1)
+	go func() {
+		if err := hs.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			customErr := errors.Wrap(err, errors.ErrCodeServerRun, "HTTP server listen and serve failed")
+			customErr.WithContext("address", hs.server.Addr)
+			logrus.WithFields(logrus.Fields{
+				"error_code": customErr.Code,
+				"error":      customErr.Error(),
+				"address":    hs.server.Addr,
+			}).Error("HTTP server listen and serve failed")
+			errChan <- customErr
+		}
+	}()
+
+	// 等待上下文取消或服务器错误
+	select {
+	case <-ctx.Done():
+		logrus.Info("Context cancelled, shutting down HTTP server")
+		return ctx.Err()
+	case err := <-errChan:
+		return err
 	}
-	return nil
 }
 
 // Stop 停止HTTP服务器
