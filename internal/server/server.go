@@ -10,7 +10,6 @@ import (
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
-	"gitee.com/openeuler/uos-tc-exporter/pkg/utils"
 	"github.com/alecthomas/kingpin"
 	"github.com/dustin/go-humanize"
 	"github.com/sirupsen/logrus"
@@ -52,7 +51,7 @@ func NewServer(name, version string) *Server {
 	return s
 }
 
-func (s *Server) SetUp() error {
+func (s *Server) SetUp(ctx context.Context) error {
 	defer func() {
 		if s.Error != nil {
 			logrus.Errorf("SetUp error: %v", s.Error)
@@ -100,7 +99,7 @@ func (s *Server) SetUp() error {
 	}
 
 	// 启动配置监控
-	if err := s.configMgr.StartWatching(context.TODO()); err != nil {
+	if err := s.configMgr.StartWatching(ctx); err != nil {
 		logrus.Warnf("Failed to start config watching: %v, config hot reload will be disabled", err)
 	} else {
 		logrus.Info("Config hot reload enabled")
@@ -125,12 +124,12 @@ func (s *Server) setupLog() error {
 
 // 这些方法已移至 HttpServer 结构体
 
-func (s *Server) Run() error {
-	go utils.HandleSignals(s.Exit)
+func (s *Server) Run(ctx context.Context) error {
 	logrus.Infof("%s successfully setup. SetUp running.", s.Name)
-
 	logrus.Infof("Running %s", s.Name)
-	return s.httpServer.Run()
+
+	// 使用上下文运行 HTTP 服务器
+	return s.httpServer.RunWithContext(ctx)
 }
 
 func (s *Server) PrintVersion() {
@@ -138,6 +137,11 @@ func (s *Server) PrintVersion() {
 }
 
 func (s *Server) Stop() {
+	s.StopWithContext(context.Background())
+}
+
+// StopWithContext 使用上下文停止服务器
+func (s *Server) StopWithContext(ctx context.Context) {
 	logrus.Info("Stopping Server")
 	logger.LogOutput("Shutting down server...")
 
@@ -149,8 +153,8 @@ func (s *Server) Stop() {
 
 	logrus.Infof("Server shutdown timeout set to: %v", shutdownTimeout)
 
-	// 创建关闭上下文
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	// 创建带超时的关闭上下文
+	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
 	// 使用WaitGroup来协调各个组件的关闭
@@ -193,7 +197,7 @@ func (s *Server) Stop() {
 	select {
 	case <-done:
 		logrus.Info("All server components stopped successfully")
-	case <-ctx.Done():
+	case <-shutdownCtx.Done():
 		logrus.Warnf("Server shutdown timed out after %v", shutdownTimeout)
 		// 强制关闭
 		if s.httpServer != nil {
