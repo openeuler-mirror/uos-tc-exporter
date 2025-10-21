@@ -70,7 +70,7 @@ func (cc *ConcurrentCollector) CollectAll(ch chan<- prometheus.Metric) error {
 
 	// 启动所有收集器
 	for i, collector := range cc.collectors {
-		if !collector.IsEnabled() {
+		if !collector.Enabled() {
 			cc.logger.Debugf("Collector %s is disabled, skipping", collector.ID())
 			continue
 		}
@@ -192,10 +192,10 @@ func (cc *ConcurrentCollector) CollectAll(ch chan<- prometheus.Metric) error {
 			"collection completed with errors",
 			map[string]interface{}{
 				"total_collectors": len(cc.collectors),
-				"successful":      len(cc.collectors) - totalErrors,
-				"errors":          totalErrors,
-				"total_metrics":   totalMetrics,
-				"duration":        totalDuration.String(),
+				"successful":       len(cc.collectors) - totalErrors,
+				"errors":           totalErrors,
+				"total_metrics":    totalMetrics,
+				"duration":         totalDuration.String(),
 			},
 		)
 	}
@@ -206,9 +206,9 @@ func (cc *ConcurrentCollector) CollectAll(ch chan<- prometheus.Metric) error {
 // GetStats 获取收集统计信息
 func (cc *ConcurrentCollector) GetStats() map[string]interface{} {
 	return map[string]interface{}{
-		"total_collectors": len(cc.collectors),
-		"pool_size":       cc.poolSize,
-		"timeout":         cc.timeout.String(),
+		"total_collectors":   len(cc.collectors),
+		"pool_size":          cc.poolSize,
+		"timeout":            cc.timeout.String(),
 		"enabled_collectors": cc.getEnabledCollectors(),
 	}
 }
@@ -217,7 +217,7 @@ func (cc *ConcurrentCollector) GetStats() map[string]interface{} {
 func (cc *ConcurrentCollector) getEnabledCollectors() []string {
 	var enabled []string
 	for _, collector := range cc.collectors {
-		if collector.IsEnabled() {
+		if collector.Enabled() {
 			enabled = append(enabled, collector.ID())
 		}
 	}
