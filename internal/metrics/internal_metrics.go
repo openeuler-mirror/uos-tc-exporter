@@ -14,29 +14,29 @@ import (
 // InternalMetrics 内部监控指标
 type InternalMetrics struct {
 	// 收集器性能指标
-	collectionDuration *prometheus.HistogramVec
+	collectionDuration  *prometheus.HistogramVec
 	collectionErrors    *prometheus.CounterVec
 	collectionSuccesses *prometheus.CounterVec
-	
+
 	// 系统资源指标
-	memoryUsage        prometheus.Gauge
-	cpuUsage           prometheus.Gauge
-	goroutineCount     prometheus.Gauge
-	uptime             prometheus.Gauge
-	
+	memoryUsage    prometheus.Gauge
+	cpuUsage       prometheus.Gauge
+	goroutineCount prometheus.Gauge
+	uptime         prometheus.Gauge
+
 	// 网络指标
-	netlinkCalls       *prometheus.CounterVec
-	netlinkErrors      *prometheus.CounterVec
-	netlinkDuration    *prometheus.HistogramVec
-	
+	netlinkCalls    *prometheus.CounterVec
+	netlinkErrors   *prometheus.CounterVec
+	netlinkDuration *prometheus.HistogramVec
+
 	// 配置相关指标
-	configReloads      prometheus.Counter
-	configErrors       prometheus.Counter
-	configLastReload   prometheus.Gauge
-	
+	configReloads    prometheus.Counter
+	configErrors     prometheus.Counter
+	configLastReload prometheus.Gauge
+
 	// 注册表
 	registry *prometheus.Registry
-	
+
 	// 状态
 	startTime time.Time
 	logger    *logrus.Logger
@@ -48,13 +48,13 @@ func NewInternalMetrics(logger *logrus.Logger) *InternalMetrics {
 	if logger == nil {
 		logger = logrus.StandardLogger()
 	}
-	
+
 	im := &InternalMetrics{
 		registry:  prometheus.NewRegistry(),
 		startTime: time.Now(),
 		logger:    logger,
 	}
-	
+
 	im.initializeMetrics()
 	return im
 }
@@ -64,13 +64,13 @@ func (im *InternalMetrics) initializeMetrics() {
 	// 收集器性能指标
 	im.collectionDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "tc_exporter_collection_duration_seconds",
-			Help: "Time spent collecting metrics from each collector",
+			Name:    "tc_exporter_collection_duration_seconds",
+			Help:    "Time spent collecting metrics from each collector",
 			Buckets: []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5},
 		},
 		[]string{"collector", "status"},
 	)
-	
+
 	im.collectionErrors = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "tc_exporter_collection_errors_total",
@@ -78,7 +78,7 @@ func (im *InternalMetrics) initializeMetrics() {
 		},
 		[]string{"collector", "error_type"},
 	)
-	
+
 	im.collectionSuccesses = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "tc_exporter_collection_successes_total",
@@ -86,28 +86,28 @@ func (im *InternalMetrics) initializeMetrics() {
 		},
 		[]string{"collector"},
 	)
-	
+
 	// 系统资源指标
 	im.memoryUsage = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "tc_exporter_memory_usage_bytes",
 		Help: "Current memory usage in bytes",
 	})
-	
+
 	im.cpuUsage = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "tc_exporter_cpu_usage_percent",
 		Help: "Current CPU usage percentage",
 	})
-	
+
 	im.goroutineCount = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "tc_exporter_goroutines",
 		Help: "Current number of goroutines",
 	})
-	
+
 	im.uptime = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "tc_exporter_uptime_seconds",
 		Help: "Process uptime in seconds",
 	})
-	
+
 	// 网络指标
 	im.netlinkCalls = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -116,7 +116,7 @@ func (im *InternalMetrics) initializeMetrics() {
 		},
 		[]string{"operation"},
 	)
-	
+
 	im.netlinkErrors = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "tc_exporter_netlink_errors_total",
@@ -124,32 +124,32 @@ func (im *InternalMetrics) initializeMetrics() {
 		},
 		[]string{"operation", "error_type"},
 	)
-	
+
 	im.netlinkDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "tc_exporter_netlink_duration_seconds",
-			Help: "Time spent on netlink operations",
+			Name:    "tc_exporter_netlink_duration_seconds",
+			Help:    "Time spent on netlink operations",
 			Buckets: []float64{0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05},
 		},
 		[]string{"operation"},
 	)
-	
+
 	// 配置相关指标
 	im.configReloads = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "tc_exporter_config_reloads_total",
 		Help: "Total number of configuration reloads",
 	})
-	
+
 	im.configErrors = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "tc_exporter_config_errors_total",
 		Help: "Total number of configuration errors",
 	})
-	
+
 	im.configLastReload = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "tc_exporter_config_last_reload_timestamp_seconds",
 		Help: "Timestamp of last configuration reload",
 	})
-	
+
 	// 注册所有指标
 	im.registry.MustRegister(
 		im.collectionDuration,
@@ -172,14 +172,14 @@ func (im *InternalMetrics) initializeMetrics() {
 func (im *InternalMetrics) RecordCollection(collector string, duration time.Duration, success bool, errorType string) {
 	im.mu.Lock()
 	defer im.mu.Unlock()
-	
+
 	status := "success"
 	if !success {
 		status = "error"
 	}
-	
+
 	im.collectionDuration.WithLabelValues(collector, status).Observe(duration.Seconds())
-	
+
 	if success {
 		im.collectionSuccesses.WithLabelValues(collector).Inc()
 	} else {
@@ -191,10 +191,10 @@ func (im *InternalMetrics) RecordCollection(collector string, duration time.Dura
 func (im *InternalMetrics) RecordNetlinkOperation(operation string, duration time.Duration, success bool, errorType string) {
 	im.mu.Lock()
 	defer im.mu.Unlock()
-	
+
 	im.netlinkCalls.WithLabelValues(operation).Inc()
 	im.netlinkDuration.WithLabelValues(operation).Observe(duration.Seconds())
-	
+
 	if !success {
 		im.netlinkErrors.WithLabelValues(operation, errorType).Inc()
 	}
@@ -204,10 +204,10 @@ func (im *InternalMetrics) RecordNetlinkOperation(operation string, duration tim
 func (im *InternalMetrics) RecordConfigReload(success bool) {
 	im.mu.Lock()
 	defer im.mu.Unlock()
-	
+
 	im.configReloads.Inc()
 	im.configLastReload.Set(float64(time.Now().Unix()))
-	
+
 	if !success {
 		im.configErrors.Inc()
 	}
@@ -217,18 +217,18 @@ func (im *InternalMetrics) RecordConfigReload(success bool) {
 func (im *InternalMetrics) UpdateSystemMetrics() {
 	im.mu.Lock()
 	defer im.mu.Unlock()
-	
+
 	// 更新运行时间
 	im.uptime.Set(time.Since(im.startTime).Seconds())
-	
+
 	// 更新goroutine数量
 	im.goroutineCount.Set(float64(getGoroutineCount()))
-	
+
 	// 更新内存使用量
 	if memStats, err := getMemoryUsage(); err == nil {
 		im.memoryUsage.Set(float64(memStats))
 	}
-	
+
 	// 更新CPU使用率
 	if cpuUsage, err := getCPUUsage(); err == nil {
 		im.cpuUsage.Set(cpuUsage)
@@ -244,12 +244,8 @@ func (im *InternalMetrics) GetRegistry() *prometheus.Registry {
 func (im *InternalMetrics) StartMonitoring(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
-	
-	for {
-		select {
-		case <-ticker.C:
-			im.UpdateSystemMetrics()
-		}
+	for range ticker.C {
+		im.UpdateSystemMetrics()
 	}
 }
 
@@ -278,10 +274,10 @@ func getCPUUsage() (float64, error) {
 func (im *InternalMetrics) Collect(ch chan<- prometheus.Metric) {
 	im.mu.RLock()
 	defer im.mu.RUnlock()
-	
+
 	// 更新系统指标
 	im.UpdateSystemMetrics()
-	
+
 	// 收集所有指标
 	im.registry.Collect(ch)
 }
