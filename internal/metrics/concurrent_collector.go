@@ -275,3 +275,146 @@ func (cc *ConcurrentCollector) GetCollector(id string) (interfaces.MetricCollect
 	}
 	return nil, false
 }
+
+// OptimizePoolSize 根据收集器数量优化池大小
+func (cc *ConcurrentCollector) OptimizePoolSize() {
+	total := len(cc.collectors)
+
+	// 根据收集器数量动态调整池大小
+	switch {
+	case total <= 2:
+		cc.poolSize = 1
+	case total <= 5:
+		cc.poolSize = 2
+	case total <= 10:
+		cc.poolSize = 4
+	case total <= 20:
+		cc.poolSize = 8
+	default:
+		cc.poolSize = 16
+	}
+
+	cc.logger.Infof("Optimized pool size to %d for %d collectors", cc.poolSize, total)
+}
+
+// BatchCollect 批量收集（按类型分组）
+func (cc *ConcurrentCollector) BatchCollect(ch chan<- prometheus.Metric, batchSize int) error {
+	if batchSize <= 0 {
+		batchSize = 5 // 默认批次大小
+	}
+
+	// 按类型分组收集器
+	collectorGroups := cc.groupCollectorsByType()
+
+	var wg sync.WaitGroup
+	errorCh := make(chan error, len(collectorGroups))
+
+	// 分批处理
+	for groupName, collectors := range collectorGroups {
+		if len(collectors) == 0 {
+			continue
+		}
+
+		wg.Add(1)
+
+		go func(group string, cols []interfaces.MetricCollector) {
+			defer wg.Done()
+
+			// 为每个组创建子收集器
+			subCollector := NewConcurrentCollector(cc.poolSize, cc.timeout, cc.logger)
+			for _, col := range cols {
+				subCollector.AddCollector(col)
+			}
+
+			// 收集该组的指标
+			if err := subCollector.CollectAll(ch); err != nil {
+				errorCh <- errors.Wrap(
+					err,
+					errors.ErrCodeMetricsCollect,
+					"batch collection failed",
+				).WithContext("group", group)
+			}
+		}(groupName, collectors)
+	}
+
+	// 等待所有批次完成
+	go func() {
+		wg.Wait()
+		close(errorCh)
+	}()
+
+	// 收集错误
+	var errors []error
+	for err := range errorCh {
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return errors.NewWithContext(
+			errors.ErrCodeMetricsCollect,
+			"batch collection completed with errors",
+			map[string]interface{}{
+				"total_batches": len(collectorGroups),
+				"errors":       len(errors),
+			},
+		)
+	}
+
+	return nil
+}
+
+// groupCollectorsByType 按类型分组收集器
+func (cc *ConcurrentCollector) groupCollectorsByType() map[string][]interfaces.MetricCollector {
+	groups := make(map[string][]interfaces.MetricCollector)
+
+	for _, collector := range cc.collectors {
+		// 根据收集器ID推断类型（例如："qdisc_htb" -> "qdisc"）
+		collectorType := inferCollectorType(collector.ID())
+		groups[collectorType] = append(groups[collectorType], collector)
+	}
+
+	return groups
+}
+
+// inferCollectorType 从收集器ID推断类型
+func inferCollectorType(id string) string {
+	// 简单的类型推断逻辑
+	if strings.HasPrefix(id, "qdisc_") {
+		return "qdisc"
+	} else if strings.HasPrefix(id, "class_") {
+		return "class"
+	} else if strings.HasPrefix(id, "app_") {
+		return "app"
+	} else if strings.HasPrefix(id, "business_") {
+		return "business"
+	}
+	return "other"
+}
+
+// HealthCheck 健康检查
+func (cc *ConcurrentCollector) HealthCheck() map[string]interface{} {
+	health := make(map[string]interface{})
+
+	var enabledCount int
+	var totalMetrics int
+
+	for _, collector := range cc.collectors {
+		if collector.IsEnabled() {
+			enabledCount++
+			// 这里可以添加更详细的健康检查逻辑
+		}
+	}
+
+	health["total_collectors"] = len(cc.collectors)
+	health["enabled_collectors"] = enabledCount
+	health["pool_size"] = cc.poolSize
+	health["timeout"] = cc.timeout.String()
+	health["status"] = "healthy"
+
+	if enabledCount == 0 {
+		health["status"] = "warning"
+		health["message"] = "No collectors enabled"
+	}
+
+	return health
+}
