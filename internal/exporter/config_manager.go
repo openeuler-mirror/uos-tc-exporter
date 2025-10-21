@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 	"sync/atomic"
-l
+
 	"time"
 
 	"github.com/fsnotify/fsnotify"

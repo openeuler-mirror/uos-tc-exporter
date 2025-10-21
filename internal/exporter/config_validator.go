@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/uos-tc-exporter/pkg/errors"
+	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -26,10 +27,10 @@ func NewConfigValidator() *ConfigValidator {
 	cv := &ConfigValidator{
 		validator: v,
 	}
-	
+
 	// 注册自定义验证规则
 	cv.registerCustomValidations()
-	
+
 	return cv
 }
 
@@ -43,13 +44,13 @@ func (cv *ConfigValidator) registerCustomValidations() {
 		}
 		return net.ParseIP(ip) != nil
 	})
-	
+
 	// 验证端口号
 	cv.validator.RegisterValidation("port", func(fl validator.FieldLevel) bool {
 		port := fl.Field().Int()
 		return port > 0 && port <= 65535
 	})
-	
+
 	// 验证时间格式
 	cv.validator.RegisterValidation("duration", func(fl validator.FieldLevel) bool {
 		durationStr := fl.Field().String()
@@ -59,7 +60,7 @@ func (cv *ConfigValidator) registerCustomValidations() {
 		_, err := time.ParseDuration(durationStr)
 		return err == nil
 	})
-	
+
 	// 验证日志级别
 	cv.validator.RegisterValidation("loglevel", func(fl validator.FieldLevel) bool {
 		level := strings.ToLower(fl.Field().String())
@@ -74,7 +75,7 @@ func (cv *ConfigValidator) registerCustomValidations() {
 		}
 		return validLevels[level]
 	})
-	
+
 	// 验证文件路径
 	cv.validator.RegisterValidation("filepath", func(fl validator.FieldLevel) bool {
 		path := fl.Field().String()
@@ -84,7 +85,7 @@ func (cv *ConfigValidator) registerCustomValidations() {
 		// 简单的路径格式检查
 		return !strings.Contains(path, "..") && !strings.Contains(path, "//")
 	})
-	
+
 	// 验证指标路径
 	cv.validator.RegisterValidation("metricspath", func(fl validator.FieldLevel) bool {
 		path := fl.Field().String()
@@ -106,17 +107,17 @@ func (cv *ConfigValidator) ValidateConfig(config *Config) error {
 	if config == nil {
 		return errors.New(errors.ErrCodeConfigValidation, "config is nil")
 	}
-	
+
 	// 基本验证
 	if err := cv.validator.Struct(config); err != nil {
 		return cv.wrapValidationError(err)
 	}
-	
+
 	// 高级验证
 	if err := cv.validateAdvanced(config); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -133,22 +134,22 @@ func (cv *ConfigValidator) validateAdvanced(config *Config) error {
 			},
 		)
 	}
-	
+
 	// 验证日志配置
 	if err := cv.validateLogConfig(&config.Logging); err != nil {
 		return err
 	}
-	
+
 	// 验证服务器配置
 	if err := cv.validateServerConfig(&config.Server); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
 // validateLogConfig 验证日志配置
-func (cv *ConfigValidator) validateLogConfig(logConfig *LoggingConfig) error {
+func (cv *ConfigValidator) validateLogConfig(logConfig *logger.Config) error {
 	if logConfig.MaxSize != "" {
 		// 验证文件大小格式 (e.g., "10MB", "1GB")
 		sizeRegex := regexp.MustCompile(`^(\d+)([KMG]B)?$`)
@@ -163,7 +164,7 @@ func (cv *ConfigValidator) validateLogConfig(logConfig *LoggingConfig) error {
 			)
 		}
 	}
-	
+
 	if logConfig.MaxAge < 0 {
 		return errors.NewWithContext(
 			errors.ErrCodeConfigValidation,
@@ -173,48 +174,38 @@ func (cv *ConfigValidator) validateLogConfig(logConfig *LoggingConfig) error {
 			},
 		)
 	}
-	
+
 	return nil
 }
 
 // validateServerConfig 验证服务器配置
 func (cv *ConfigValidator) validateServerConfig(serverConfig *ServerConfig) error {
 	if serverConfig.ShutdownTimeout != 0 {
-		duration, err := time.ParseDuration(serverConfig.ShutdownTimeout)
-		if err != nil {
-			return errors.NewWithContext(
-				errors.ErrCodeConfigValidation,
-				"invalid shutdown timeout format",
-				map[string]interface{}{
-					"shutdown_timeout": serverConfig.ShutdownTimeout,
-					"error":           err.Error(),
-				},
-			)
-		}
-		
+		duration := serverConfig.ShutdownTimeout
+
 		if duration < 5*time.Second {
 			return errors.NewWithContext(
 				errors.ErrCodeConfigValidation,
 				"shutdown timeout is too short",
 				map[string]interface{}{
 					"shutdown_timeout": serverConfig.ShutdownTimeout,
-					"minimum":         "5s",
+					"minimum":          "5s",
 				},
 			)
 		}
-		
+
 		if duration > 5*time.Minute {
 			return errors.NewWithContext(
 				errors.ErrCodeConfigValidation,
 				"shutdown timeout is too long",
 				map[string]interface{}{
 					"shutdown_timeout": serverConfig.ShutdownTimeout,
-					"maximum":         "5m",
+					"maximum":          "5m",
 				},
 			)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -222,7 +213,7 @@ func (cv *ConfigValidator) validateServerConfig(serverConfig *ServerConfig) erro
 func (cv *ConfigValidator) wrapValidationError(err error) error {
 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
 		var errorDetails []map[string]interface{}
-		
+
 		for _, fieldError := range validationErrors {
 			detail := map[string]interface{}{
 				"field":   fieldError.Field(),
@@ -233,17 +224,17 @@ func (cv *ConfigValidator) wrapValidationError(err error) error {
 			}
 			errorDetails = append(errorDetails, detail)
 		}
-		
+
 		return errors.NewWithContext(
 			errors.ErrCodeConfigValidation,
 			"configuration validation failed",
 			map[string]interface{}{
 				"validation_errors": errorDetails,
-				"total_errors":     len(validationErrors),
+				"total_errors":      len(validationErrors),
 			},
 		)
 	}
-	
+
 	return errors.Wrap(err, errors.ErrCodeConfigValidation, "configuration validation failed")
 }
 
@@ -366,7 +357,7 @@ func (cv *ConfigValidator) ParseDuration(durationStr string) (time.Duration, err
 	if durationStr == "" {
 		return 0, nil
 	}
-	
+
 	duration, err := time.ParseDuration(durationStr)
 	if err != nil {
 		return 0, errors.WrapWithContext(
@@ -378,7 +369,7 @@ func (cv *ConfigValidator) ParseDuration(durationStr string) (time.Duration, err
 			},
 		)
 	}
-	
+
 	return duration, nil
 }
 
@@ -387,11 +378,11 @@ func (cv *ConfigValidator) ParseFileSize(sizeStr string) (int64, error) {
 	if sizeStr == "" {
 		return 0, nil
 	}
-	
+
 	// 解析大小字符串 (e.g., "10MB", "1GB")
 	re := regexp.MustCompile(`^(\d+)([KMG]B)?$`)
 	matches := re.FindStringSubmatch(sizeStr)
-	
+
 	if len(matches) != 3 {
 		return 0, errors.NewWithContext(
 			errors.ErrCodeConfigValidation,
@@ -402,7 +393,7 @@ func (cv *ConfigValidator) ParseFileSize(sizeStr string) (int64, error) {
 			},
 		)
 	}
-	
+
 	value, err := strconv.ParseInt(matches[1], 10, 64)
 	if err != nil {
 		return 0, errors.WrapWithContext(
@@ -414,7 +405,7 @@ func (cv *ConfigValidator) ParseFileSize(sizeStr string) (int64, error) {
 			},
 		)
 	}
-	
+
 	unit := matches[2]
 	switch unit {
 	case "KB":
