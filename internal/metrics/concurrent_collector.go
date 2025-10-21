@@ -202,3 +202,76 @@ func (cc *ConcurrentCollector) CollectAll(ch chan<- prometheus.Metric) error {
 
 	return nil
 }
+
+// GetStats 获取收集统计信息
+func (cc *ConcurrentCollector) GetStats() map[string]interface{} {
+	return map[string]interface{}{
+		"total_collectors": len(cc.collectors),
+		"pool_size":       cc.poolSize,
+		"timeout":         cc.timeout.String(),
+		"enabled_collectors": cc.getEnabledCollectors(),
+	}
+}
+
+// getEnabledCollectors 获取启用的收集器列表
+func (cc *ConcurrentCollector) getEnabledCollectors() []string {
+	var enabled []string
+	for _, collector := range cc.collectors {
+		if collector.IsEnabled() {
+			enabled = append(enabled, collector.ID())
+		}
+	}
+	return enabled
+}
+
+// SetPoolSize 设置并发池大小
+func (cc *ConcurrentCollector) SetPoolSize(size int) {
+	if size > 0 {
+		cc.poolSize = size
+	}
+}
+
+// SetTimeout 设置超时时间
+func (cc *ConcurrentCollector) SetTimeout(timeout time.Duration) {
+	if timeout > 0 {
+		cc.timeout = timeout
+	}
+}
+
+// EnableCollector 启用特定收集器
+func (cc *ConcurrentCollector) EnableCollector(id string) error {
+	for _, collector := range cc.collectors {
+		if collector.ID() == id {
+			collector.SetEnabled(true)
+			return nil
+		}
+	}
+	return errors.New(
+		errors.ErrCodeMetricsCollect,
+		"collector not found",
+	).WithContext("collector_id", id)
+}
+
+// DisableCollector 禁用特定收集器
+func (cc *ConcurrentCollector) DisableCollector(id string) error {
+	for _, collector := range cc.collectors {
+		if collector.ID() == id {
+			collector.SetEnabled(false)
+			return nil
+		}
+	}
+	return errors.New(
+		errors.ErrCodeMetricsCollect,
+		"collector not found",
+	).WithContext("collector_id", id)
+}
+
+// GetCollector 获取特定收集器
+func (cc *ConcurrentCollector) GetCollector(id string) (interfaces.MetricCollector, bool) {
+	for _, collector := range cc.collectors {
+		if collector.ID() == id {
+			return collector, true
+		}
+	}
+	return nil, false
+}
