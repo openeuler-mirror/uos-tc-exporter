@@ -345,18 +345,18 @@ func (cc *ConcurrentCollector) BatchCollect(ch chan<- prometheus.Metric, batchSi
 	}()
 
 	// 收集错误
-	var errors []error
+	var errorsList []error
 	for err := range errorCh {
-		errors = append(errors, err)
+		errorsList = append(errorsList, err)
 	}
 
-	if len(errors) > 0 {
+	if len(errorsList) > 0 {
 		return errors.NewWithContext(
 			errors.ErrCodeMetricsCollect,
 			"batch collection completed with errors",
 			map[string]interface{}{
 				"total_batches": len(collectorGroups),
-				"errors":       len(errors),
+				"errors":        len(errorsList),
 			},
 		)
 	}
@@ -397,10 +397,10 @@ func (cc *ConcurrentCollector) HealthCheck() map[string]interface{} {
 	health := make(map[string]interface{})
 
 	var enabledCount int
-	var totalMetrics int
+	// var totalMetrics int
 
 	for _, collector := range cc.collectors {
-		if collector.IsEnabled() {
+		if collector.Enabled() {
 			enabledCount++
 			// 这里可以添加更详细的健康检查逻辑
 		}
