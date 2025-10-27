@@ -60,26 +60,32 @@ func (cc *ConcurrentCollector) CollectAll(ch chan<- prometheus.Metric) error {
 		return nil
 	}
 
+	// 预计算启用的收集器数量
+	enabledCollectors := cc.getEnabledCollectors()
+	if len(enabledCollectors) == 0 {
+		cc.logger.Warn("No enabled collectors found")
+		return nil
+	}
+
 	// 创建带缓冲的通道来收集结果
-	resultCh := make(chan collectionResult, len(cc.collectors))
-	errorCh := make(chan error, len(cc.collectors))
+	resultCh := make(chan collectionResult, len(enabledCollectors))
+	errorCh := make(chan error, len(enabledCollectors))
 
 	// 创建信号量控制并发数
 	semaphore := make(chan struct{}, cc.poolSize)
 
 	var wg sync.WaitGroup
 
-	// 启动所有收集器
-	for i, collector := range cc.collectors {
+	// 启动所有启用的收集器
+	for _, collector := range cc.collectors {
 		if !collector.Enabled() {
-			cc.logger.Debugf("Collector %s is disabled, skipping", collector.ID())
 			continue
 		}
 
 		wg.Add(1)
 		semaphore <- struct{}{} // 获取信号量
 
-		go func(idx int, col interfaces.MetricCollector) {
+		go func(col interfaces.MetricCollector) {
 			defer wg.Done()
 			defer func() { <-semaphore }() // 释放信号量
 
@@ -133,7 +139,7 @@ func (cc *ConcurrentCollector) CollectAll(ch chan<- prometheus.Metric) error {
 				cc.metrics.RecordCollection(collectorName, duration, true, "")
 				resultCh <- result
 			}
-		}(i, collector)
+		}(collector)
 	}
 
 	// 等待所有收集器完成
