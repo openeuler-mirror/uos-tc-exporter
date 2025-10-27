@@ -11,7 +11,9 @@ WORKDIR /app
 COPY go.mod go.sum ./
 
 # 下载依赖
-RUN go mod download
+RUN go env -w GOPROXY=https://goproxy.cn,direct && \
+    go env -w GOSUMDB="sum.golang.org" && \ 
+    go mod download
 
 # 复制源代码
 COPY . .
@@ -32,7 +34,7 @@ RUN addgroup -S tc-exporter && adduser -S tc-exporter -G tc-exporter
 WORKDIR /root/
 
 # 从构建阶段复制二进制文件
-COPY --from=builder /app/build/bin/tc-exporter .
+COPY --from=builder /app/bin/uos_tc_exporter ./uos-tc-exporter
 
 # 复制配置文件
 COPY config/tc-exporter.yaml /etc/uos-exporter/tc-exporter.yaml
@@ -53,4 +55,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:9062/health || exit 1
 
 # 设置容器启动命令
-CMD ["./tc-exporter", "--config.file=/etc/uos-exporter/tc-exporter.yaml"]
+CMD ["./uos-tc-exporter", "--config.file=/etc/uos-exporter/tc-exporter.yaml"]
