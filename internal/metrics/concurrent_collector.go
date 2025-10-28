@@ -312,6 +312,10 @@ func (cc *ConcurrentCollector) BatchCollect(ch chan<- prometheus.Metric, batchSi
 
 	// 按类型分组收集器
 	collectorGroups := cc.groupCollectorsByType()
+	if len(collectorGroups) == 0 {
+		cc.logger.Warn("No collector groups found for batch collection")
+		return nil
+	}
 
 	var wg sync.WaitGroup
 	errorCh := make(chan error, len(collectorGroups))
@@ -319,6 +323,7 @@ func (cc *ConcurrentCollector) BatchCollect(ch chan<- prometheus.Metric, batchSi
 	// 分批处理
 	for groupName, collectors := range collectorGroups {
 		if len(collectors) == 0 {
+			cc.logger.Debugf("Skipping empty collector group: %s", groupName)
 			continue
 		}
 
@@ -333,13 +338,18 @@ func (cc *ConcurrentCollector) BatchCollect(ch chan<- prometheus.Metric, batchSi
 				subCollector.AddCollector(col)
 			}
 
+			// 记录批次开始
+			cc.logger.Debugf("Starting batch collection for group: %s (%d collectors)", group, len(cols))
+
 			// 收集该组的指标
 			if err := subCollector.CollectAll(ch); err != nil {
 				errorCh <- errors.Wrap(
 					err,
 					errors.ErrCodeMetricsCollect,
 					"batch collection failed",
-				).WithContext("group", group)
+				).WithContext("group", group).WithContext("collector_count", len(cols))
+			} else {
+				cc.logger.Debugf("Batch collection completed for group: %s", group)
 			}
 		}(groupName, collectors)
 	}
@@ -354,19 +364,24 @@ func (cc *ConcurrentCollector) BatchCollect(ch chan<- prometheus.Metric, batchSi
 	var errorsList []error
 	for err := range errorCh {
 		errorsList = append(errorsList, err)
+		cc.logger.Warnf("Batch collection error: %v", err)
 	}
 
 	if len(errorsList) > 0 {
+		successfulBatches := len(collectorGroups) - len(errorsList)
 		return errors.NewWithContext(
 			errors.ErrCodeMetricsCollect,
 			"batch collection completed with errors",
 			map[string]interface{}{
-				"total_batches": len(collectorGroups),
-				"errors":        len(errorsList),
+				"total_batches":     len(collectorGroups),
+				"successful_batches": successfulBatches,
+				"failed_batches":     len(errorsList),
+				"errors":            len(errorsList),
 			},
 		)
 	}
 
+	cc.logger.Infof("Batch collection completed successfully: %d groups processed", len(collectorGroups))
 	return nil
 }
 
