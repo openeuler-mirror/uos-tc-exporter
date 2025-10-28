@@ -11,8 +11,6 @@ run:
 
 # 输出配置
 output:
-  # 输出格式
-  format: colored-line-number
   # 打印问题编号
   print-issued-lines: true
   # 打印linter名称
@@ -64,7 +62,6 @@ linters-settings:
       - experimental
       
   govet:
-    check-shadowing: true
     fieldalignment: true
     # 禁用一些过于严格的检查
     disable:
