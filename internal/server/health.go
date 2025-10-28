@@ -5,7 +5,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -30,11 +29,11 @@ type HealthChecker interface {
 
 // HealthManager 健康状态管理器
 type HealthManager struct {
-	startTime  time.Time
-	version    string
-	checkers   []HealthChecker
-	isReady    atomic.Bool
-	logger     *logrus.Logger
+	startTime time.Time
+	version   string
+	checkers  []HealthChecker
+	isReady   atomic.Bool
+	logger    *logrus.Logger
 }
 
 // NewHealthManager 创建健康状态管理器
@@ -78,13 +77,12 @@ func (h *HealthManager) HealthHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := "healthy"
 	details := make(map[string]interface{})
-	var errors []string
 
 	// 执行所有健康检查
 	for _, checker := range h.checkers {
 		if err := checker.Check(); err != nil {
 			status = "unhealthy"
-			errors = append(errors, fmt.Sprintf("%s: %v", checker.Name(), err))
+			// errors = append(errors, fmt.Sprintf("%s: %v", checker.Name(), err))
 			details[checker.Name()] = map[string]interface{}{
 				"status":  "failed",
 				"error":   err.Error(),
@@ -109,7 +107,7 @@ func (h *HealthManager) HealthHandler(w http.ResponseWriter, r *http.Request) {
 			Uptime:    h.GetUptime(),
 			Details:   details,
 		}
-		
+
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			h.logger.Errorf("Failed to encode health response: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
