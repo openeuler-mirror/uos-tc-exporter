@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/factories"
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/core/interfaces"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/registry"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -68,7 +67,7 @@ func NewManagerV2(cfg *config.ManagerConfig, logger *logrus.Logger) *ManagerV2 {
 func (m *ManagerV2) initializeFactories() {
 	// Initialize and register different factories
 	m.logger.Info("Initializing Qdisc Factory")
-	qdiscFactory := factories.NewQdiscFactory()
+	qdiscFactory := registry.NewQdiscFactory()
 	mc := map[string]config.MetricConfig{
 		"bytes_total":      *config.NewMetricConfig("bytes_total", "QdiscPie byte counter", "qdisc"),
 		"packets_total":    *config.NewMetricConfig("packets_total", "QdiscPie packet counter", "qdisc"),
