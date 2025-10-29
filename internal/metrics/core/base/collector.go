@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/core/interfaces"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )

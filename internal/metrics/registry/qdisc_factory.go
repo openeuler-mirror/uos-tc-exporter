@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2025 UnionTech Software Technology Co., Ltd.
 // SPDX-License-Identifier: MIT
 
-package factories
+package registry
 
 import (
 	"errors"
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/collectors/qdisc"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/core/interfaces"
 	"github.com/sirupsen/logrus"
 )
 

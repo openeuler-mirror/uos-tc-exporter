@@ -6,7 +6,7 @@ package base
 import (
 	"sync"
 
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/core/interfaces"
 	"gitee.com/openeuler/uos-tc-exporter/internal/tc"
 	"github.com/jsimonetti/rtnetlink"
 	"github.com/prometheus/client_golang/prometheus"

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/core/interfaces"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -373,10 +373,10 @@ func (cc *ConcurrentCollector) BatchCollect(ch chan<- prometheus.Metric, batchSi
 			errors.ErrCodeMetricsCollect,
 			"batch collection completed with errors",
 			map[string]interface{}{
-				"total_batches":     len(collectorGroups),
+				"total_batches":      len(collectorGroups),
 				"successful_batches": successfulBatches,
 				"failed_batches":     len(errorsList),
-				"errors":            len(errorsList),
+				"errors":             len(errorsList),
 			},
 		)
 	}

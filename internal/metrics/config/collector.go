@@ -6,7 +6,7 @@ package config
 import (
 	"time"
 
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/core/interfaces"
 )
 
 // CollectorConfig 收集器配置接口

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/interfaces"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/core/interfaces"
 )
 
 // CollectorFactory 收集器工厂接口

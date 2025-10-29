@@ -4,8 +4,8 @@
 package qdisc
 
 import (
-	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/base"
 	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/config"
+	"gitee.com/openeuler/uos-tc-exporter/internal/metrics/core/base"
 	"github.com/florianl/go-tc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
