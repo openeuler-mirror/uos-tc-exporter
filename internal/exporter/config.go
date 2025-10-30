@@ -120,11 +120,11 @@ func (c *Config) Validate() error {
 // validateAddress 验证地址格式
 func (c *Config) validateAddress() error {
 	if c.Address == "" {
-		return fmt.Errorf("address cannot be empty")
+		return fmt.Errorf("address validation failed: address cannot be empty")
 	}
 
 	// 检查是否为有效的IP地址
-	if net.ParseIP(c.Address) != nil {
+	if ip := net.ParseIP(c.Address); ip != nil {
 		return nil
 	}
 
@@ -138,7 +138,12 @@ func (c *Config) validateAddress() error {
 		return nil
 	}
 
-	return fmt.Errorf("invalid address format: %s (must be valid IP, domain, or interface name)", c.Address)
+	// 检查是否为localhost别名
+	if c.Address == "localhost" {
+		return nil
+	}
+
+	return fmt.Errorf("address validation failed: invalid address format '%s' - must be valid IP, domain, or interface name", c.Address)
 }
 
 // validatePort 验证端口范围
