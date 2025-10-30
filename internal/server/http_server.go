@@ -197,14 +197,22 @@ func (hs *HttpServer) Run() error {
 // RunWithContext 使用上下文启动HTTP服务器
 func (hs *HttpServer) RunWithContext(ctx context.Context) error {
 	if hs.server == nil {
-		return fmt.Errorf("HTTP server not initialized")
+		return errors.New(
+			errors.ErrCodeServerSetup,
+			"HTTP server not initialized",
+		).WithContext("component", "http_server")
 	}
 
 	logrus.Infof("Running HTTP server on %s", hs.server.Addr)
 
 	// 在单独的 goroutine 中启动服务器
 	errChan := make(chan error, 1)
+	serverStarted := make(chan struct{}, 1)
+
 	go func() {
+		// 标记服务器已开始启动
+		close(serverStarted)
+
 		if err := hs.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			customErr := errors.Wrap(err, errors.ErrCodeServerRun, "HTTP server listen and serve failed")
 			customErr.WithContext("address", hs.server.Addr)
@@ -214,15 +222,33 @@ func (hs *HttpServer) RunWithContext(ctx context.Context) error {
 				"address":    hs.server.Addr,
 			}).Error("HTTP server listen and serve failed")
 			errChan <- customErr
+		} else {
+			logrus.Info("HTTP server stopped gracefully")
 		}
 	}()
+
+	// 等待服务器启动或超时
+	select {
+	case <-serverStarted:
+		logrus.Info("HTTP server startup initiated")
+	case <-time.After(5 * time.Second):
+		logrus.Warn("HTTP server startup taking longer than expected")
+	case <-ctx.Done():
+		logrus.Info("Context cancelled before server startup completed")
+		return ctx.Err()
+	}
 
 	// 等待上下文取消或服务器错误
 	select {
 	case <-ctx.Done():
 		logrus.Info("Context cancelled, shutting down HTTP server")
+		// 尝试优雅关闭
+		if err := hs.Stop(); err != nil {
+			logrus.Warnf("Error during graceful shutdown: %v", err)
+		}
 		return ctx.Err()
 	case err := <-errChan:
+		logrus.Error("HTTP server encountered an error")
 		return err
 	}
 }
