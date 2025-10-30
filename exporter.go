@@ -11,7 +11,7 @@ import (
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/server"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/errors"
-	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
+	logger "gitee.com/openeuler/uos-tc-exporter/pkg/logging"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )

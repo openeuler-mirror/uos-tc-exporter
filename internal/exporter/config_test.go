@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
+	logger "gitee.com/openeuler/uos-tc-exporter/pkg/logging"
 )
 
 func TestConfig_Validate(t *testing.T) {
