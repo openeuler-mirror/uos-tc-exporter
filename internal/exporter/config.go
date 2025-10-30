@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
+	logger "gitee.com/openeuler/uos-tc-exporter/pkg/logging"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/utils"
 	"github.com/alecthomas/kingpin"
 	"github.com/go-playground/validator/v10"

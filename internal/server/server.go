@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
-	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
+	logger "gitee.com/openeuler/uos-tc-exporter/pkg/logging"
 	"github.com/alecthomas/kingpin"
 	"github.com/dustin/go-humanize"
 	"github.com/sirupsen/logrus"

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/uos-tc-exporter/pkg/errors"
-	"gitee.com/openeuler/uos-tc-exporter/pkg/logger"
+	logger "gitee.com/openeuler/uos-tc-exporter/pkg/logging"
 	"github.com/go-playground/validator/v10"
 )
 
