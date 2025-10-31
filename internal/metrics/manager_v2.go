@@ -142,6 +142,7 @@ func (m *ManagerV2) CollectAllWithContext(ctx context.Context, ch chan<- prometh
 
 // collectConcurrently 并发收集指标
 func (m *ManagerV2) collectConcurrently(ctx context.Context, ch chan<- prometheus.Metric, collectors []interfaces.MetricCollector) {
+	start := time.Now()
 	var wg sync.WaitGroup
 	collectorCh := make(chan interfaces.MetricCollector, len(collectors))
 	errorCh := make(chan error, len(collectors))
@@ -178,8 +179,8 @@ func (m *ManagerV2) collectConcurrently(ctx context.Context, ch chan<- prometheu
 }
 
 // collectWorker 单个收集工作goroutine
-func (m *ManagerV2) collectWorker(ctx context.Context, wg *sync.WaitGroup, 
-	collectorCh <-chan interfaces.MetricCollector, 
+func (m *ManagerV2) collectWorker(ctx context.Context, wg *sync.WaitGroup,
+	collectorCh <-chan interfaces.MetricCollector,
 	ch chan<- prometheus.Metric, errorCh chan<- error) {
 	defer wg.Done()
 
