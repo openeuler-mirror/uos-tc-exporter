@@ -91,9 +91,15 @@ func Wrap(err error, code ErrorCode, message string) *Error {
 	var customErr *Error
 	if e, ok := err.(*Error); ok {
 		customErr = e
-		// 更新包装信息
-		customErr.Message = message
+		// 保留原始错误信息，添加包装信息
+		customErr.Message = fmt.Sprintf("%s: %s", message, e.Message)
 		customErr.Code = code
+		customErr.Severity = getSeverityByCode(code)
+		customErr.IsTemporary = isTemporaryByCode(code)
+		// 更新调用者信息
+		customErr.CallerFile = file
+		customErr.CallerLine = line
+		customErr.CallerFunc = fn.Name()
 	} else {
 		customErr = &Error{
 			Code:        code,
@@ -397,4 +403,3 @@ func SafeExecute(fn func() error, code ErrorCode, message string) (err error) {
 
 	return fn()
 }
-
