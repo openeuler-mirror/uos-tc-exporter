@@ -120,31 +120,133 @@ func (m *ManagerV2) CollectAllWithContext(ctx context.Context, ch chan<- prometh
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
-		// m.stats.RecordCollection(duration, true, nil)
-		fmt.Printf("Collection took %v\n", duration)
+		m.updateStats(duration, true, nil)
+		m.logger.Debugf("Collection completed in %v", duration)
 	}()
 
 	// 检查上下文是否已取消
-	select {
-	case <-ctx.Done():
-		m.logger.Warnf("Collection cancelled due to context: %v", ctx.Err())
+	if err := ctx.Err(); err != nil {
+		m.logger.Warnf("Collection cancelled due to context: %v", err)
 		return
-	default:
 	}
 
 	collectors := m.registry.GetEnableCollectors()
+	if len(collectors) == 0 {
+		m.logger.Warn("No enabled collectors found")
+		return
+	}
+
+	// 使用并发收集提高性能
+	m.collectConcurrently(ctx, ch, collectors)
+}
+
+// collectConcurrently 并发收集指标
+func (m *ManagerV2) collectConcurrently(ctx context.Context, ch chan<- prometheus.Metric, collectors []interfaces.MetricCollector) {
+	var wg sync.WaitGroup
+	collectorCh := make(chan interfaces.MetricCollector, len(collectors))
+	errorCh := make(chan error, len(collectors))
+
+	// 启动固定数量的工作goroutine
+	numWorkers := min(len(collectors), 10) // 限制最大并发数
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go m.collectWorker(ctx, &wg, collectorCh, ch, errorCh)
+	}
+
+	// 分发收集器到工作队列
 	for _, collector := range collectors {
+		collectorCh <- collector
+	}
+	close(collectorCh)
+
+	// 等待所有工作完成
+	wg.Wait()
+	close(errorCh)
+
+	// 处理收集错误
+	var errors []error
+	for err := range errorCh {
+		if err != nil {
+			errors = append(errors, err)
+			m.logger.Errorf("Collector error: %v", err)
+		}
+	}
+
+	if len(errors) > 0 {
+		m.updateStats(time.Since(start), false, fmt.Errorf("%d collectors failed", len(errors)))
+	}
+}
+
+// collectWorker 单个收集工作goroutine
+func (m *ManagerV2) collectWorker(ctx context.Context, wg *sync.WaitGroup, 
+	collectorCh <-chan interfaces.MetricCollector, 
+	ch chan<- prometheus.Metric, errorCh chan<- error) {
+	defer wg.Done()
+
+	for collector := range collectorCh {
 		// 检查上下文是否已取消
-		select {
-		case <-ctx.Done():
-			m.logger.Warnf("Collection cancelled during collector %s: %v", collector.ID(), ctx.Err())
+		if err := ctx.Err(); err != nil {
+			m.logger.Debugf("Collection cancelled for worker: %v", err)
 			return
-		default:
 		}
 
+		collectorStart := time.Now()
 		m.logger.Debugf("Collecting from collector: %s", collector.ID())
-		collector.Collect(ch)
+
+		// 使用安全执行避免panic
+		err := m.safeCollect(collector, ch)
+		collectorDuration := time.Since(collectorStart)
+
+		if err != nil {
+			errorCh <- fmt.Errorf("collector %s failed after %v: %w", collector.ID(), collectorDuration, err)
+		} else {
+			m.logger.Debugf("Collector %s completed in %v", collector.ID(), collectorDuration)
+		}
 	}
+}
+
+// safeCollect 安全执行收集操作
+func (m *ManagerV2) safeCollect(collector interfaces.MetricCollector, ch chan<- prometheus.Metric) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic during collection: %v", r)
+		}
+	}()
+
+	collector.Collect(ch)
+	return nil
+}
+
+// updateStats 更新收集统计信息
+func (m *ManagerV2) updateStats(duration time.Duration, success bool, err error) {
+	m.stats.mu.Lock()
+	defer m.stats.mu.Unlock()
+
+	m.stats.TotalCollections++
+	m.stats.TotalDuration += duration
+
+	if success {
+		m.stats.SuccessfulCollections++
+	} else {
+		m.stats.FailedCollections++
+		m.stats.LastError = err
+		m.stats.LastErrorTime = time.Now()
+	}
+
+	// 计算平均持续时间
+	if m.stats.TotalCollections > 0 {
+		m.stats.AverageDuration = m.stats.TotalDuration / time.Duration(m.stats.TotalCollections)
+	}
+
+	m.stats.LastCollectionTime = time.Now()
+}
+
+// min 返回两个整数中的较小值
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // GetCollector 获取收集器
