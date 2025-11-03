@@ -31,25 +31,47 @@ func NewConfig(level, logPath string, maxSize int64, maxAge time.Duration) fileL
 }
 
 func Init(config fileLogConfig) {
+	// 设置日志格式
+	logrus.SetFormatter(&formatter.Formatter{
+		TimestampFormat: "2006-01-02 15:04:05",
+		NoColors:        true,
+		HideKeys:        true,
+	})
+
+	// 设置日志输出
 	if config.FileRotator == nil {
 		logrus.SetOutput(logrus.StandardLogger().Out)
 	} else {
 		logrus.SetReportCaller(true)
-		logrus.SetFormatter(&formatter.Formatter{})
 		logrus.SetOutput(config.FileRotator)
 	}
-	switch level := strings.ToLower(config.level); level {
+
+	// 设置日志级别
+	level := strings.ToLower(config.level)
+	switch level {
 	case "debug":
 		logrus.SetLevel(logrus.DebugLevel)
+		logrus.SetReportCaller(true) // 调试级别显示调用者信息
 	case "info":
 		logrus.SetLevel(logrus.InfoLevel)
 	case "warn":
 		logrus.SetLevel(logrus.WarnLevel)
+	case "error":
+		logrus.SetLevel(logrus.ErrorLevel)
+	case "":
+		// 默认级别为info
+		logrus.SetLevel(logrus.InfoLevel)
+		logrus.Info("Using default log level: info")
 	default:
 		logrus.SetLevel(logrus.WarnLevel)
-		logrus.Warnf("unknown log level: %s, use default level: warn", level)
-		logrus.Warnf("support level is [debug,info,warn]")
+		logrus.Warnf("Unknown log level: %s, using default level: warn", level)
+		logrus.Warn("Supported levels are: debug, info, warn, error")
 	}
+
+	// 设置性能优化选项
+	logrus.SetNoLock() // 在单线程环境中提高性能
+
+	logrus.Infof("Logger initialized with level: %s", logrus.GetLevel())
 }
 
 func InitDefaultLog() {
