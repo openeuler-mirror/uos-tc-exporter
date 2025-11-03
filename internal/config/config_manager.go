@@ -615,21 +615,28 @@ func (cm *ConfigManager) StopWatching() error {
 // watchLoop 文件监控循环
 func (cm *ConfigManager) watchLoop(ctx context.Context) {
 	var reloadTimer *time.Timer
+	var consecutiveErrors int
 	configPathClean := filepath.Clean(cm.configPath)
+	maxConsecutiveErrors := 5 // 最大连续错误次数
 
 	for {
 		select {
 		case <-ctx.Done():
+			logrus.Info("Config watcher stopped due to context cancellation")
 			return
 		case <-cm.stopChan:
+			logrus.Info("Config watcher stopped by request")
 			return
 		case event, ok := <-cm.watcher.Events:
 			if !ok {
+				logrus.Info("Config watcher events channel closed")
 				return
 			}
 
 			// 只处理配置文件的变化
 			if filepath.Clean(event.Name) == configPathClean {
+				logrus.Debugf("Config file event detected: %s", event)
+
 				if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
 					// 防抖处理：延迟重载
 					if reloadTimer != nil {
@@ -638,22 +645,49 @@ func (cm *ConfigManager) watchLoop(ctx context.Context) {
 					reloadTimer = time.AfterFunc(cm.reloadDelay, func() {
 						select {
 						case cm.reloadChan <- struct{}{}:
-							// 成功发送重载信号
+							logrus.Debug("Reload signal sent successfully")
 						default:
-							// 通道已满，跳过本次重载
+							logrus.Warn("Reload channel full, skipping this reload")
 						}
 					})
+				} else if event.Op&fsnotify.Remove != 0 {
+					logrus.Warnf("Config file removed: %s", configPathClean)
+					// 文件被删除，停止监控
+					cm.StopWatching()
 				}
 			}
 		case err, ok := <-cm.watcher.Errors:
 			if !ok {
+				logrus.Info("Config watcher errors channel closed")
 				return
 			}
-			logrus.Errorf("Config file watcher error: %v", err)
+			consecutiveErrors++
+			logrus.Errorf("Config file watcher error (%d/%d): %v", 
+				consecutiveErrors, maxConsecutiveErrors, err)
+
+			// 如果连续错误过多，停止监控
+			if consecutiveErrors >= maxConsecutiveErrors {
+				logrus.Error("Too many consecutive watcher errors, stopping config watcher")
+				cm.StopWatching()
+				return
+			}
 		case <-cm.reloadChan:
 			// 执行配置重载
 			if err := cm.Reload(); err != nil {
-				logrus.Errorf("Failed to reload config: %v", err)
+				consecutiveErrors++
+				logrus.Errorf("Failed to reload config (%d/%d): %v", 
+					consecutiveErrors, maxConsecutiveErrors, err)
+
+				// 如果连续重载失败过多，停止监控
+				if consecutiveErrors >= maxConsecutiveErrors {
+					logrus.Error("Too many consecutive reload failures, stopping config watcher")
+					cm.StopWatching()
+					return
+				}
+			} else {
+				// 重载成功，重置错误计数
+				consecutiveErrors = 0
+				logrus.Debug("Config reloaded successfully")
 			}
 		}
 	}
