@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
+	"gitee.com/openeuler/uos-tc-exporter/internal/config"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/errors"
 	"gitee.com/openeuler/uos-tc-exporter/pkg/ratelimit"
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,7 +24,7 @@ type HttpServer struct {
 	server        *http.Server
 	handlers      []HandlerFunc
 	handlersMu    sync.RWMutex // 保护handlers切片的读写锁
-	config        exporter.Config
+	config        config.Config
 	metricsPath   string
 	promReg       *prometheus.Registry
 	healthManager *HealthManager
@@ -32,7 +32,7 @@ type HttpServer struct {
 }
 
 // NewHttpServer 创建新的HTTP服务器
-func NewHttpServer(config exporter.Config, metricsPath string, promReg *prometheus.Registry) *HttpServer {
+func NewHttpServer(config config.Config, metricsPath string, promReg *prometheus.Registry) *HttpServer {
 	return &HttpServer{
 		config:      config,
 		metricsPath: metricsPath,

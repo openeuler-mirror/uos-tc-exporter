@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"gitee.com/openeuler/uos-tc-exporter/internal/exporter"
+	"gitee.com/openeuler/uos-tc-exporter/internal/config"
 	logger "gitee.com/openeuler/uos-tc-exporter/pkg/logging"
 	"github.com/alecthomas/kingpin"
 	"github.com/dustin/go-humanize"
@@ -30,7 +30,7 @@ func init() {
 type Server struct {
 	Name       string
 	Version    string
-	configMgr  *exporter.ConfigManager
+	configMgr  *config.ConfigManager
 	metricsMgr *MetricsManager
 	httpServer *HttpServer
 	ExitSignal chan struct{}
@@ -67,7 +67,7 @@ func (s *Server) SetUp(ctx context.Context) error {
 
 	// 初始化配置管理器
 	// s.configMgr = NewConfigManager()
-	s.configMgr, err = exporter.NewConfigManager(*exporter.Configfile)
+	s.configMgr, err = config.NewConfigManager(*config.Configfile)
 	if err != nil {
 		return err
 	}
