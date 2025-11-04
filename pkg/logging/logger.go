@@ -34,8 +34,8 @@ func Init(config fileLogConfig) {
 	// 设置日志格式
 	logrus.SetFormatter(&formatter.Formatter{
 		TimestampFormat: "2006-01-02 15:04:05",
-		NoColors:        true,
-		HideKeys:        true,
+		// NoColors:        true,
+		// HideKeys:        true,
 	})
 
 	// 设置日志输出
@@ -69,7 +69,7 @@ func Init(config fileLogConfig) {
 	}
 
 	// 设置性能优化选项
-	logrus.SetNoLock() // 在单线程环境中提高性能
+	// logrus.SetNoLock() // 在单线程环境中提高性能
 
 	logrus.Infof("Logger initialized with level: %s", logrus.GetLevel())
 }
