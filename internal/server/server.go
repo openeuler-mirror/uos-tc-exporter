@@ -5,6 +5,7 @@ package server
 
 import (
 	"context"
+	"math"
 	"sync"
 	"time"
 
@@ -114,6 +115,10 @@ func (s *Server) setupLog() error {
 	if err != nil {
 		logrus.Errorf("Parsing log size failed: %v", err)
 		return err
+	}
+	if size > math.MaxInt64 {
+		// 预防整数溢出
+		size = math.MaxInt64
 	}
 	logConfig := logger.NewConfig(config.Logging.Level, config.Logging.LogPath, int64(size), config.Logging.MaxAge)
 	logger.Init(logConfig)
