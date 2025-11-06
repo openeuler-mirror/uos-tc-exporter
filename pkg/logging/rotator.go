@@ -30,7 +30,10 @@ func NewFileRotator(basePath string, maxSize int64, maxAge time.Duration) *FileR
 	dir := filepath.Dir(basePath)
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		os.MkdirAll(dir, 0755)
+		err := os.MkdirAll(dir, 0750)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to create log directory: %v", err))
+		}
 	}
 	return &FileRotator{
 		basePath:  basePath,
@@ -63,7 +66,7 @@ func (fr *FileRotator) setupCurrent() error {
 	if fr.current == nil {
 		fileinfo, err := os.Stat(fr.basePath)
 		if err == nil {
-			fr.current, err = os.OpenFile(fr.basePath, os.O_APPEND|os.O_WRONLY, 0644)
+			fr.current, err = os.OpenFile(fr.basePath, os.O_APPEND|os.O_WRONLY, 0600)
 			if err != nil {
 				return err
 			}
