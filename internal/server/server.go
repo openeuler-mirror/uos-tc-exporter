@@ -116,11 +116,15 @@ func (s *Server) setupLog() error {
 		logrus.Errorf("Parsing log size failed: %v", err)
 		return err
 	}
+	// More explicit bounds checking for uint64 -> int64 conversion
+	var logSize int64
 	if size > math.MaxInt64 {
-		// 预防整数溢出
-		size = math.MaxInt64
+		logrus.Warnf("Log size %d exceeds maximum, capping to %d", size, math.MaxInt64)
+		logSize = math.MaxInt64
+	} else {
+		logSize = int64(size)
 	}
-	logConfig := logger.NewConfig(config.Logging.Level, config.Logging.LogPath, int64(size), config.Logging.MaxAge)
+	logConfig := logger.NewConfig(config.Logging.Level, config.Logging.LogPath, logSize, config.Logging.MaxAge)
 	logger.Init(logConfig)
 	return nil
 }
