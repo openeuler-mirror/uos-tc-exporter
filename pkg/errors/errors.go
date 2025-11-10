@@ -163,14 +163,14 @@ func (e *Error) Error() string {
 // JSON 返回错误的JSON表示
 func (e *Error) JSON() string {
 	type ErrorJSON struct {
-		Code        ErrorCode     `json:"code"`
-		Message     string        `json:"message"`
-		Cause       string        `json:"cause,omitempty"`
+		Code        ErrorCode      `json:"code"`
+		Message     string         `json:"message"`
+		Cause       string         `json:"cause,omitempty"`
 		Context     map[string]any `json:"context,omitempty"`
-		Timestamp   time.Time     `json:"timestamp"`
-		Severity    string        `json:"severity"`
-		IsTemporary bool          `json:"is_temporary"`
-		Caller      string        `json:"caller,omitempty"`
+		Timestamp   time.Time      `json:"timestamp"`
+		Severity    string         `json:"severity"`
+		IsTemporary bool           `json:"is_temporary"`
+		Caller      string         `json:"caller,omitempty"`
 	}
 
 	cause := ""
@@ -317,7 +317,13 @@ func ShouldRetry(err error, maxRetries int, currentRetry int) bool {
 func GetRetryDelay(err error, currentRetry int) time.Duration {
 	baseDelay := time.Second
 	maxDelay := 30 * time.Second
-
+	// Prevent integer overflow by limiting the shift amount
+	if currentRetry < 0 {
+		currentRetry = 0
+	}
+	if currentRetry > 62 { // 2^63 would overflow int64
+		return maxDelay
+	}
 	delay := baseDelay * time.Duration(1<<uint(currentRetry))
 	if delay > maxDelay {
 		delay = maxDelay
