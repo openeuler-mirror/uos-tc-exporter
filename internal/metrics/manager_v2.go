@@ -174,7 +174,7 @@ func (m *ManagerV2) collectConcurrently(ctx context.Context, ch chan<- prometheu
 	}
 
 	if len(errors) > 0 {
-		m.updateStats(time.Since(start), false, fmt.Errorf("%d collectors failed", len(errors)))
+		m.updateStats(duration, false, fmt.Errorf("%d collectors failed", len(errors)))
 	}
 }
 
