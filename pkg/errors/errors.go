@@ -347,8 +347,8 @@ func ErrorStack(err error) []string {
 }
 
 // LoggableError 返回适合日志记录的错误信息
-func LoggableError(err error) map[string]interface{} {
-	result := make(map[string]interface{})
+func LoggableError(err error) map[string]any {
+	result := make(map[string]any)
 
 	if e, ok := err.(*Error); ok {
 		result["code"] = e.Code
