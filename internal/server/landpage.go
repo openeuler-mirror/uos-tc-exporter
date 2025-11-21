@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"net/http"
 	"text/template"
+
+	"github.com/sirupsen/logrus"
 )
 
 type LandingPageConfig struct {
@@ -419,5 +421,8 @@ func (h *LandingPageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-	w.Write(h.landingPage)
+	_, err := w.Write(h.landingPage)
+	if err != nil {
+		logrus.Errorf("failed to write landing page response: %v", err)
+	}
 }

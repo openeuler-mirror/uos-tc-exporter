@@ -653,7 +653,10 @@ func (cm *ConfigManager) watchLoop(ctx context.Context) {
 				} else if event.Op&fsnotify.Remove != 0 {
 					logrus.Warnf("Config file removed: %s", configPathClean)
 					// 文件被删除，停止监控
-					cm.StopWatching()
+					err := cm.StopWatching()
+					if err != nil {
+						logrus.Errorf("Failed to stop config watcher: %v", err)
+					}
 				}
 			}
 		case err, ok := <-cm.watcher.Errors:
@@ -662,26 +665,32 @@ func (cm *ConfigManager) watchLoop(ctx context.Context) {
 				return
 			}
 			consecutiveErrors++
-			logrus.Errorf("Config file watcher error (%d/%d): %v", 
+			logrus.Errorf("Config file watcher error (%d/%d): %v",
 				consecutiveErrors, maxConsecutiveErrors, err)
 
 			// 如果连续错误过多，停止监控
 			if consecutiveErrors >= maxConsecutiveErrors {
 				logrus.Error("Too many consecutive watcher errors, stopping config watcher")
-				cm.StopWatching()
+				err := cm.StopWatching()
+				if err != nil {
+					logrus.Errorf("Failed to stop config watcher: %v", err)
+				}
 				return
 			}
 		case <-cm.reloadChan:
 			// 执行配置重载
 			if err := cm.Reload(); err != nil {
 				consecutiveErrors++
-				logrus.Errorf("Failed to reload config (%d/%d): %v", 
+				logrus.Errorf("Failed to reload config (%d/%d): %v",
 					consecutiveErrors, maxConsecutiveErrors, err)
 
 				// 如果连续重载失败过多，停止监控
 				if consecutiveErrors >= maxConsecutiveErrors {
 					logrus.Error("Too many consecutive reload failures, stopping config watcher")
-					cm.StopWatching()
+					err := cm.StopWatching()
+					if err != nil {
+						logrus.Errorf("Failed to stop config watcher: %v", err)
+					}
 					return
 				}
 			} else {
