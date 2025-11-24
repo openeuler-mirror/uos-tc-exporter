@@ -37,13 +37,16 @@ func NewConfigValidator() *ConfigValidator {
 // registerCustomValidations 注册自定义验证规则
 func (cv *ConfigValidator) registerCustomValidations() {
 	// 验证IP地址
-	cv.validator.RegisterValidation("ip", func(fl validator.FieldLevel) bool {
+	err := cv.validator.RegisterValidation("ip", func(fl validator.FieldLevel) bool {
 		ip := fl.Field().String()
 		if ip == "" {
 			return true // 空值由其他验证器处理
 		}
 		return net.ParseIP(ip) != nil
 	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to register ip validation: %v", err))
+	}
 
 	// 验证端口号
 	cv.validator.RegisterValidation("port", func(fl validator.FieldLevel) bool {

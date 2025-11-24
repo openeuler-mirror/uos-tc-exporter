@@ -83,7 +83,10 @@ func (m *ManagerV2) initializeFactories() {
 	cfg.Metrics = mc
 	qdiscFactory.AddConfig("qdisc", cfg)
 	m.factories["qdisc"] = qdiscFactory
-	m.registry.RegisterFactory("qdisc", qdiscFactory)
+	err := m.registry.RegisterFactory("qdisc", qdiscFactory)
+	if err != nil {
+		m.logger.Errorf("Failed to register Qdisc factory: %v", err)
+	}
 	// Add other factories as needed
 }
 
