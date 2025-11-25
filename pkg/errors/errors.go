@@ -314,17 +314,14 @@ func ShouldRetry(err error, maxRetries int, currentRetry int) bool {
 }
 
 // GetRetryDelay 获取重试延迟时间（指数退避）
-func GetRetryDelay(err error, currentRetry int) time.Duration {
+func GetRetryDelay(err error, currentRetry uint) time.Duration {
 	baseDelay := time.Second
 	maxDelay := 30 * time.Second
-	// Prevent integer overflow by limiting the shift amount
-	if currentRetry < 0 {
-		currentRetry = 0
-	}
+
 	if currentRetry > 62 { // 2^63 would overflow int64
 		return maxDelay
 	}
-	delay := baseDelay * time.Duration(1<<uint(currentRetry))
+	delay := baseDelay * time.Duration(1<<currentRetry)
 	if delay > maxDelay {
 		delay = maxDelay
 	}
