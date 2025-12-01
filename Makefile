@@ -16,6 +16,7 @@ GOARCH ?= $(shell go env GOARCH)
 GOBUILD := $(GO) build
 GOTEST := $(GO) test
 GOCLEAN := $(GO) clean
+GOSEC := gosec
 
 # 构建目录
 BUILD_DIR := bin
@@ -23,7 +24,12 @@ BINARY_PATH := $(BUILD_DIR)/$(BINARY_NAME)
 
 # 默认目标
 .PHONY: all
-all: lint test build
+all: lint test gosec build
+
+# 完整检查目标（包含安全扫描）
+.PHONY: check
+check: lint test gosec
+	@echo "All checks completed successfully"
 
 # 帮助信息
 .PHONY: help
@@ -33,6 +39,7 @@ help:
 	@echo "  test       - Run tests"
 	@echo "  test-coverage - Run tests with coverage report"
 	@echo "  lint       - Run code quality checks"
+	@echo "  gosec      - Run security scan with gosec"
 	@echo "  clean      - Clean build artifacts"
 	@echo "  help       - Show this help message"
 
@@ -82,6 +89,17 @@ lint:
 	fi
 	golangci-lint run ./...
 	@echo "Code quality checks completed"
+
+# 运行安全扫描
+.PHONY: gosec
+gosec:
+	@echo "Running security scan with gosec..."
+	@if ! command -v $(GOSEC) >/dev/null 2>&1; then \
+		echo "Installing gosec..."; \
+		$(GO) install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest; \
+	fi
+	$(GOSEC) ./...
+	@echo "Security scan completed"
 
 # 清理构建产物
 .PHONY: clean
