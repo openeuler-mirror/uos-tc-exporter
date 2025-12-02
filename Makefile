@@ -100,6 +100,28 @@ gosec:
 	fi
 	$(GOSEC) ./...
 	@echo "Security scan completed"
+	
+# 运行详细的安全扫描（包含更多信息）
+.PHONY: gosec-detail
+gosec-detail:
+	@echo "Running detailed security scan with gosec..."
+	@if ! command -v $(GOSEC) >/dev/null 2>&1; then \
+		echo "Installing gosec..."; \
+		$(GO) install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest; \
+	fi
+	$(GOSEC) -fmt=json -out=gosec-results.json ./...
+	@echo "Detailed security scan completed. Results saved to gosec-results.json"
+
+# 运行安全扫描并生成HTML报告
+.PHONY: gosec-html
+gosec-html:
+	@echo "Running security scan with HTML report..."
+	@if ! command -v $(GOSEC) >/dev/null 2>&1; then \
+		echo "Installing gosec..."; \
+		$(GO) install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest; \
+	fi
+	$(GOSEC) -fmt=html -out=gosec-report.html ./...
+	@echo "Security scan with HTML report completed. Report saved to gosec-report.html"
 
 # 清理构建产物
 .PHONY: clean
