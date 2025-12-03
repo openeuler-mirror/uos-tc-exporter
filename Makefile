@@ -35,13 +35,15 @@ check: lint test gosec
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  build      - Build the binary"
-	@echo "  test       - Run tests"
+	@echo "  build         - Build the binary"
+	@echo "  test          - Run tests"
 	@echo "  test-coverage - Run tests with coverage report"
-	@echo "  lint       - Run code quality checks"
-	@echo "  gosec      - Run security scan with gosec"
-	@echo "  clean      - Clean build artifacts"
-	@echo "  help       - Show this help message"
+	@echo "  lint          - Run code quality checks"
+	@echo "  gosec         - Run security scan with gosec"
+	@echo "  gosec-detail  - Run detailed security scan with gosec"
+	@echo "  gosec-html    - Run security scan and generate HTML report"
+	@echo "  clean         - Clean build artifacts"
+	@echo "  help          - Show this help message"
 
 # 创建构建目录
 $(BUILD_DIR):
