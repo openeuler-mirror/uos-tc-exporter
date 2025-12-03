@@ -49,13 +49,13 @@ func (cv *ConfigValidator) registerCustomValidations() {
 	}
 
 	// 验证端口号
-	cv.validator.RegisterValidation("port", func(fl validator.FieldLevel) bool {
+	_ = cv.validator.RegisterValidation("port", func(fl validator.FieldLevel) bool {
 		port := fl.Field().Int()
 		return port > 0 && port <= 65535
 	})
 
 	// 验证时间格式
-	cv.validator.RegisterValidation("duration", func(fl validator.FieldLevel) bool {
+	_ = cv.validator.RegisterValidation("duration", func(fl validator.FieldLevel) bool {
 		durationStr := fl.Field().String()
 		if durationStr == "" {
 			return true
@@ -65,7 +65,7 @@ func (cv *ConfigValidator) registerCustomValidations() {
 	})
 
 	// 验证日志级别
-	cv.validator.RegisterValidation("loglevel", func(fl validator.FieldLevel) bool {
+	_ = cv.validator.RegisterValidation("loglevel", func(fl validator.FieldLevel) bool {
 		level := strings.ToLower(fl.Field().String())
 		validLevels := map[string]bool{
 			"debug":   true,
@@ -80,7 +80,7 @@ func (cv *ConfigValidator) registerCustomValidations() {
 	})
 
 	// 验证文件路径
-	cv.validator.RegisterValidation("filepath", func(fl validator.FieldLevel) bool {
+	_ = cv.validator.RegisterValidation("filepath", func(fl validator.FieldLevel) bool {
 		path := fl.Field().String()
 		if path == "" {
 			return true
@@ -90,7 +90,7 @@ func (cv *ConfigValidator) registerCustomValidations() {
 	})
 
 	// 验证指标路径
-	cv.validator.RegisterValidation("metricspath", func(fl validator.FieldLevel) bool {
+	_ = cv.validator.RegisterValidation("metricspath", func(fl validator.FieldLevel) bool {
 		path := fl.Field().String()
 		if path == "" {
 			return false

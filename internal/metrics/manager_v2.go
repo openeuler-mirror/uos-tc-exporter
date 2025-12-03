@@ -96,7 +96,7 @@ func (m *ManagerV2) registerCollectors() {
 	for _, qdiscType := range qdiscTypes {
 		collector, err := m.registry.CreateCollector("qdisc", qdiscType)
 		if err == nil {
-			m.registry.Register(collector)
+			_ = m.registry.Register(collector)
 		} else {
 			m.logger.Warnf("Failed to create qdisc collector %s: %v", qdiscType, err)
 		}
