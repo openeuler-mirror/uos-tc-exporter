@@ -41,7 +41,7 @@ type ServerConfig struct {
 
 type Config struct {
 	Logging     logger.Config `yaml:"log"`
-	Address     string        `yaml:"address" validate:"required,ip|hostname|interface"`
+	Address     string        `yaml:"address" validate:"required"`
 	Port        int           `yaml:"port" validate:"required,min=1,max=65535"`
 	MetricsPath string        `yaml:"metricsPath" validate:"required,startswith=/"`
 	Server      ServerConfig  `yaml:"server"`
@@ -98,6 +98,21 @@ func (c *Config) Validate() error {
 		for _, err := range err.(validator.ValidationErrors) {
 			errors = append(errors, fmt.Sprintf("field '%s' failed validation tag '%s'", err.Field(), err.Tag()))
 		}
+	}
+
+	// 验证地址配置
+	if err := c.validateAddress(); err != nil {
+		errors = append(errors, fmt.Sprintf("address validation failed: %v", err))
+	}
+
+	// 验证端口配置
+	if err := c.validatePort(); err != nil {
+		errors = append(errors, fmt.Sprintf("port validation failed: %v", err))
+	}
+
+	// 验证指标路径配置
+	if err := c.validateMetricsPath(); err != nil {
+		errors = append(errors, fmt.Sprintf("metrics path validation failed: %v", err))
 	}
 
 	// 验证日志配置
