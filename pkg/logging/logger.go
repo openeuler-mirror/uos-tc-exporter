@@ -24,9 +24,10 @@ type fileLogConfig struct {
 }
 
 func NewConfig(level, logPath string, maxSize int64, maxAge time.Duration) fileLogConfig {
+	fr, _ := NewFileRotator(logPath, maxSize, maxAge)
 	return fileLogConfig{
 		level:       level,
-		FileRotator: NewFileRotator(logPath, maxSize, maxAge),
+		FileRotator: fr,
 	}
 }
 
