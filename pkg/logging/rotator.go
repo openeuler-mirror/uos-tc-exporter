@@ -26,13 +26,13 @@ type FileRotator struct {
 	keepFiles int
 }
 
-func NewFileRotator(basePath string, maxSize int64, maxAge time.Duration) *FileRotator {
+func NewFileRotator(basePath string, maxSize int64, maxAge time.Duration) (*FileRotator, error) {
 	dir := filepath.Dir(basePath)
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0750)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to create log directory: %v", err))
+			return nil, fmt.Errorf("failed to create log directory: %w", err)
 		}
 	}
 	return &FileRotator{
@@ -40,7 +40,7 @@ func NewFileRotator(basePath string, maxSize int64, maxAge time.Duration) *FileR
 		maxSize:   maxSize,
 		maxAge:    maxAge,
 		keepFiles: defaultMaxFiles,
-	}
+	}, nil
 }
 
 func (fr *FileRotator) Write(p []byte) (n int, err error) {

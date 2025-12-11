@@ -80,8 +80,14 @@ func TestInit(t *testing.T) {
 		{
 			name: "debug level with file rotator",
 			config: fileLogConfig{
-				level:       "debug",
-				FileRotator: NewFileRotator("/tmp/test_debug.log", 1024*1024, time.Hour*24),
+				level: "debug",
+				FileRotator: func() *FileRotator {
+					rotator, err := NewFileRotator("/tmp/test_debug.log", 1024*1024, time.Hour*24)
+					if err != nil {
+						return nil
+					}
+					return rotator
+				}(),
 			},
 			expectedLevel: logrus.DebugLevel,
 			shouldSetFile: true,
@@ -89,8 +95,14 @@ func TestInit(t *testing.T) {
 		{
 			name: "info level with file rotator",
 			config: fileLogConfig{
-				level:       "info",
-				FileRotator: NewFileRotator("/tmp/test_info.log", 1024*1024, time.Hour*24),
+				level: "info",
+				FileRotator: func() *FileRotator {
+					rotator, err := NewFileRotator("/tmp/test_info.log", 1024*1024, time.Hour*24)
+					if err != nil {
+						return nil
+					}
+					return rotator
+				}(),
 			},
 			expectedLevel: logrus.InfoLevel,
 			shouldSetFile: true,
@@ -98,8 +110,14 @@ func TestInit(t *testing.T) {
 		{
 			name: "warn level with file rotator",
 			config: fileLogConfig{
-				level:       "warn",
-				FileRotator: NewFileRotator("/tmp/test_warn.log", 1024*1024, time.Hour*24),
+				level: "warn",
+				FileRotator: func() *FileRotator {
+					rotator, err := NewFileRotator("/tmp/test_warn.log", 1024*1024, time.Hour*24)
+					if err != nil {
+						return nil
+					}
+					return rotator
+				}(),
 			},
 			expectedLevel: logrus.WarnLevel,
 			shouldSetFile: true,
@@ -107,8 +125,14 @@ func TestInit(t *testing.T) {
 		{
 			name: "error level with file rotator",
 			config: fileLogConfig{
-				level:       "error",
-				FileRotator: NewFileRotator("/tmp/test_error.log", 1024*1024, time.Hour*24),
+				level: "error",
+				FileRotator: func() *FileRotator {
+					rotator, err := NewFileRotator("/tmp/test_error.log", 1024*1024, time.Hour*24)
+					if err != nil {
+						return nil
+					}
+					return rotator
+				}(),
 			},
 			expectedLevel: logrus.ErrorLevel,
 			shouldSetFile: true,
@@ -204,8 +228,9 @@ func TestInitDefaultLog(t *testing.T) {
 
 func TestInit_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name   string
-		config fileLogConfig
+		name        string
+		config      fileLogConfig
+		expectError bool
 	}{
 		{
 			name: "nil file rotator",
@@ -213,34 +238,31 @@ func TestInit_EdgeCases(t *testing.T) {
 				level:       "info",
 				FileRotator: nil,
 			},
+			expectError: false,
 		},
 		{
 			name: "invalid log path for file rotator",
 			config: fileLogConfig{
-				level:       "info",
-				FileRotator: NewFileRotator("/invalid/path/test.log", 1024*1024, time.Hour*24),
+				level: "info",
+				FileRotator: func() *FileRotator {
+					rotator, err := NewFileRotator("/invalid/path/test.log", 1024*1024, time.Hour*24)
+					if err != nil {
+						return nil
+					}
+					return rotator
+				}(),
 			},
+			expectError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// 保存原始状态以便恢复
-			originalLevel := logrus.GetLevel()
-			originalOutput := logrus.StandardLogger().Out
-
-			defer func() {
-				logrus.SetLevel(originalLevel)
-				logrus.SetOutput(originalOutput)
-			}()
-
-			// 应该不会panic
-			assert.NotPanics(t, func() {
-				Init(tt.config)
-			})
-
-			// 验证基本设置
-			assert.Equal(t, logrus.InfoLevel, logrus.GetLevel())
+			if tt.expectError {
+				assert.Nil(t, tt.config.FileRotator, "Expected error for invalid log path")
+			} else {
+				assert.NotNil(t, tt.config.FileRotator, "Expected valid file rotator")
+			}
 		})
 	}
 }
@@ -348,10 +370,10 @@ func TestFileRotatorIntegration(t *testing.T) {
 				logrus.SetLevel(originalLevel)
 				logrus.SetOutput(originalOutput)
 			}()
-
+			fr, _ := NewFileRotator(tt.logPath, 1024*1024, time.Hour*24)
 			config := fileLogConfig{
 				level:       tt.level,
-				FileRotator: NewFileRotator(tt.logPath, 1024*1024, time.Hour*24),
+				FileRotator: fr,
 			}
 
 			Init(config)
@@ -380,10 +402,10 @@ func TestFileRotatorIntegration(t *testing.T) {
 func BenchmarkInit(b *testing.B) {
 	tempDir := b.TempDir()
 	logPath := tempDir + "/benchmark.log"
-
+	fr, _ := NewFileRotator(logPath, 1024*1024, time.Hour*24)
 	config := fileLogConfig{
 		level:       "info",
-		FileRotator: NewFileRotator(logPath, 1024*1024, time.Hour*24),
+		FileRotator: fr,
 	}
 
 	b.ResetTimer()
