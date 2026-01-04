@@ -70,12 +70,23 @@ func (m *ManagerV2) initializeFactories() {
 	qdiscFactory := registry.NewQdiscFactory()
 
 	qdiscFactory.AddConfig("qdisc", m.getQdiscConfig())
+	qdiscFactory.AddConfig("fq", m.getQdiscFqConfig())
 	m.factories["qdisc"] = qdiscFactory
 	err := m.registry.RegisterFactory("qdisc", qdiscFactory)
 	if err != nil {
 		m.logger.Errorf("Failed to register Qdisc factory: %v", err)
 	}
 	// Add other factories as needed
+}
+
+func (m *ManagerV2) getQdiscFqConfig() *config.CollectorConfig {
+	mc := map[string]config.MetricConfig{
+		"fq_gc_flows":          *config.NewMetricConfig("fq_gc_flows", "FQ gc flow counter", "fq"),
+		"fq_high_prio_packets": *config.NewMetricConfig("packets_total", "FQ high prio packets counter", "fq"),
+	}
+	cfg := config.NewCollectorConfig()
+	cfg.Metrics = mc
+	return cfg
 }
 
 func (m *ManagerV2) getQdiscConfig() *config.CollectorConfig {
