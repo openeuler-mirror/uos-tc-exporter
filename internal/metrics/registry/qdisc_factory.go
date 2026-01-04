@@ -54,6 +54,10 @@ func (qf *QdiscFactory) CreateCollector(qdiscType string) (interfaces.MetricColl
 		return qdisc.NewCodelCollector(*cfg, logger), nil
 	case "qdisc":
 		return qdisc.NewQdiscCollector(*cfg, logger), nil
+	case "cbq":
+		return qdisc.NewCbqCollector(*cfg, logger), nil
+	case "fq":
+		return qdisc.NewFqCollector(*cfg, logger), nil
 	default:
 		return nil, errors.New("unsupported qdisc type: " + qdiscType)
 	}
