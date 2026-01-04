@@ -40,7 +40,7 @@ func (c *FqCollector) initializeMetrics(cfg *config.CollectorConfig) {
 	labelNames := c.LabelNames
 	for metricName, metricConfig := range cfg.GetMetrics() {
 		desc := prometheus.NewDesc(
-			"qdisc_cbq_"+metricName,
+			"qdisc_fq_"+metricName,
 			metricConfig.GetHelp(),
 			labelNames, nil,
 		)
@@ -51,7 +51,7 @@ func (c *FqCollector) initializeMetrics(cfg *config.CollectorConfig) {
 
 // ValidateQdisc 验证 qdisc 是否支持
 func (c *FqCollector) ValidateQdisc(qdisc *tc.Object) bool {
-	return qdisc.Kind == "cbq"
+	return qdisc.Kind == "fq"
 }
 
 // CollectQdiscMetrics 收集 qdisc 指标
@@ -62,11 +62,11 @@ func (c *FqCollector) CollectQdiscMetrics(ch chan<- prometheus.Metric, ns, devic
 		return
 	}
 	if tcQdisc.XStats == nil {
-		c.Logger.Debugf("No extended stats for cbq qdisc on device %s in netns %s", deviceName, ns)
+		c.Logger.Debugf("No extended stats for fq qdisc on device %s in netns %s", deviceName, ns)
 		return
 	}
 	if tcQdisc.XStats.Fq == nil {
-		c.Logger.Debugf("No cbq stats for cbq qdisc on device %s in netns %s", deviceName, ns)
+		c.Logger.Debugf("No fq stats for cbq qdisc on device %s in netns %s", deviceName, ns)
 		return
 	}
 	attrs := tcQdisc.XStats.Fq
