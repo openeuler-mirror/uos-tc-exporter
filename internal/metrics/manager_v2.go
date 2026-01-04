@@ -68,6 +68,17 @@ func (m *ManagerV2) initializeFactories() {
 	// Initialize and register different factories
 	m.logger.Info("Initializing Qdisc Factory")
 	qdiscFactory := registry.NewQdiscFactory()
+
+	qdiscFactory.AddConfig("qdisc", m.getQdiscConfig())
+	m.factories["qdisc"] = qdiscFactory
+	err := m.registry.RegisterFactory("qdisc", qdiscFactory)
+	if err != nil {
+		m.logger.Errorf("Failed to register Qdisc factory: %v", err)
+	}
+	// Add other factories as needed
+}
+
+func (m *ManagerV2) getQdiscConfig() *config.CollectorConfig {
 	mc := map[string]config.MetricConfig{
 		"bytes_total":      *config.NewMetricConfig("bytes_total", "QdiscPie byte counter", "qdisc"),
 		"packets_total":    *config.NewMetricConfig("packets_total", "QdiscPie packet counter", "qdisc"),
@@ -81,13 +92,7 @@ func (m *ManagerV2) initializeFactories() {
 	}
 	cfg := config.NewCollectorConfig()
 	cfg.Metrics = mc
-	qdiscFactory.AddConfig("qdisc", cfg)
-	m.factories["qdisc"] = qdiscFactory
-	err := m.registry.RegisterFactory("qdisc", qdiscFactory)
-	if err != nil {
-		m.logger.Errorf("Failed to register Qdisc factory: %v", err)
-	}
-	// Add other factories as needed
+	return cfg
 }
 
 func (m *ManagerV2) registerCollectors() {
